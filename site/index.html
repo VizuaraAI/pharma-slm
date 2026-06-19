@@ -161,6 +161,22 @@
   .gauge .val{position:absolute;left:0;top:0;bottom:0;border-radius:999px}
   .quote{border-left:3px solid var(--green);padding:8px 0 8px 18px;margin-top:26px;font-size:20px;font-weight:600;color:var(--ink-2);max-width:64ch}
 
+  /* roadmap / playbook */
+  .roadmap{margin-top:38px}
+  .rstep{display:flex;gap:20px;padding-bottom:18px;position:relative}
+  .rstep:not(:last-child):before{content:"";position:absolute;left:23px;top:50px;bottom:-2px;width:2px;background:var(--line)}
+  .rnum{flex:0 0 48px;height:48px;border-radius:14px;background:var(--ink);color:#fff;font-weight:900;font-size:19px;display:flex;align-items:center;justify-content:center;z-index:1}
+  .rstep.dec .rnum{background:var(--purple)}
+  .rcard{flex:1;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px 22px;box-shadow:var(--shadow)}
+  .rcard h4{font-size:19.5px;font-weight:900;letter-spacing:-.02em}
+  .rcard p{color:var(--gray);font-size:15px;margin-top:5px}
+  .rmeta{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .rchip{font-size:12.5px;font-weight:700;padding:5px 11px;border-radius:999px}
+  .rchip.ab{background:var(--purple-soft);color:#6024d0}
+  .rchip.cost{background:var(--green-soft);color:#067a53}
+  .rchip.key{background:#FFF4D6;color:#9a6b00}
+  .sub-h{font-size:23px;font-weight:900;letter-spacing:-.02em;margin:42px 0 4px}
+
   footer{background:var(--ink);color:#cdd6e0;padding:64px 0 48px;margin-top:20px}
   footer h3{color:#fff;font-size:30px;margin-bottom:8px}
   footer .runbox{background:#11161d;border:1px solid #222c37;border-radius:14px;padding:16px 18px;margin-top:18px;
@@ -182,7 +198,7 @@
       <a href="#experiments">Experiments</a>
       <a href="#chat">Chat</a>
       <a href="#mcq">MCQ exam</a>
-      <a href="#meaning">What it means</a>
+      <a href="#playbook">Playbook</a>
     </div>
     <div style="display:flex;gap:10px;align-items:center">
       <a href="https://github.com/VizuaraAI/pharma-slm" target="_blank" rel="noopener" class="pill pill-ghost" style="padding:11px 18px">★ GitHub</a>
@@ -391,10 +407,125 @@
   </div>
 </section>
 
-<!-- 08 OPEN SOURCE -->
-<section class="block" id="opensource">
+<!-- 08 PLAYBOOK -->
+<section class="block" id="playbook">
   <div class="wrap reveal">
     <div class="knum">08</div>
+    <h2>How an enterprise builds an LLM — the playbook.</h2>
+    <p class="lead">The exact roadmap we followed, generalized. Purple steps are <b>decisions</b>; each step
+      lists the <b>ablations to run</b> and a <b>rough cost</b> (at the 350M scale). The single most important
+      rule is at step&nbsp;3: <b>judge models on real tasks, not on training loss.</b></p>
+
+    <div class="roadmap">
+      <div class="rstep dec">
+        <div class="rnum">0</div>
+        <div class="rcard">
+          <h4>Decide scope & budget</h4>
+          <p>Pick the <b>task</b> first — it sets everything. Generation/summarization → a small model is fine.
+            Multi-step reasoning / exams → you need ~1B+. Then choose <b>from-scratch</b> (full control + custom
+            tokenizer, needs lots of domain data) vs <b>continued-pretraining</b> (faster, data-light, inherits reasoning).</p>
+          <div class="rmeta"><span class="rchip key">Decision: size ↔ task ↔ budget</span><span class="rchip cost">Cost: planning only</span></div>
+        </div>
+      </div>
+      <div class="rstep">
+        <div class="rnum">1</div>
+        <div class="rcard">
+          <h4>Gather data + build a custom tokenizer</h4>
+          <p>Blend domain text with general English. Watch the <b>domain-data ceiling</b> (we hit a 1B-token wall and
+            had to expand). Train a custom BPE — it's free when from-scratch and the one thing you can't do later.</p>
+          <div class="rmeta"><span class="rchip ab">Ablate later: mix ratio</span><span class="rchip cost">Cost: ~$5–10 (CPU)</span></div>
+        </div>
+      </div>
+      <div class="rstep">
+        <div class="rnum">2</div>
+        <div class="rcard">
+          <h4>Build the spine — then smoke-test tiny</h4>
+          <p>Model + DDP trainer + eval harness + infra. <b>Always run a tiny end-to-end test first</b> (it caught 4
+            real bugs for us for ~$2 before any big spend).</p>
+          <div class="rmeta"><span class="rchip cost">Cost: ~$2</span></div>
+        </div>
+      </div>
+      <div class="rstep dec">
+        <div class="rnum">3</div>
+        <div class="rcard">
+          <h4>Ablation sweeps — parallel & cheap</h4>
+          <p>Short runs, one GPU each, that <b>self-abandon</b> if they stall. Round 1: learning rate. Round 2: data
+            mix — <b>judge on the downstream task, not loss</b> (our best-loss model gave the worst answers). Round 3:
+            architecture (e.g. GQA).</p>
+          <div class="rmeta"><span class="rchip ab">Ablate: LR ×4 · mix ×3 · arch</span><span class="rchip key">Golden rule: tasks &gt; loss</span><span class="rchip cost">Cost: ~$15–30</span></div>
+        </div>
+      </div>
+      <div class="rstep">
+        <div class="rnum">4</div>
+        <div class="rcard">
+          <h4>Production fleet — full runs in parallel</h4>
+          <p>Train a few full candidates that vary your <b>biggest unknown</b> (for us: the general↔domain mix), all at
+            once, and pick the winner <b>by evaluation</b>. Watch for overfitting (our 75%-domain run overfit).</p>
+          <div class="rmeta"><span class="rchip ab">Ablate: the one big unknown</span><span class="rchip cost">Cost: ~$150–300</span></div>
+        </div>
+      </div>
+      <div class="rstep">
+        <div class="rnum">5</div>
+        <div class="rcard">
+          <h4>Scale the winner — train it long</h4>
+          <p><b>Over-train past Chinchilla</b> (small models keep improving). Make it resume-capable. If the domain
+            corpus is thin, <b>expand the data</b> before adding tokens, or you'll just memorize.</p>
+          <div class="rmeta"><span class="rchip cost">Cost: ~$200 (350M) → scales with size</span></div>
+        </div>
+      </div>
+      <div class="rstep">
+        <div class="rnum">6</div>
+        <div class="rcard">
+          <h4>Instruction-tune (SFT)</h4>
+          <p>Pre-training gives <b>knowledge</b>; SFT gives <b>behavior</b> (it answers instead of rambling). Cheap, huge
+            UX impact. Loss-mask to the answer tokens only.</p>
+          <div class="rmeta"><span class="rchip cost">Cost: ~$20</span></div>
+        </div>
+      </div>
+      <div class="rstep">
+        <div class="rnum">7</div>
+        <div class="rcard">
+          <h4>Evaluate, deploy & demo</h4>
+          <p>Grade on <b>held-out real tasks</b>, ship a live endpoint, and let people try it. If facts matter more than
+            scale lets you afford, add <b>retrieval (RAG)</b> — it boosts accuracy cheaply without a bigger model.</p>
+          <div class="rmeta"><span class="rchip cost">Cost: ~$1 / serving session</span></div>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="sub-h">Golden rules we learned the hard way</h3>
+    <div class="grid3">
+      <div class="card"><h3>Judge on tasks, not loss</h3><p>Our lowest-loss model gave the worst answers. Always score on the real downstream task.</p></div>
+      <div class="card"><h3>Match size to the task</h3><p>350M writes well but can't reason through exams. Capability is a function of <i>scale</i>, not just data.</p></div>
+      <div class="card"><h3>Over-train small models</h3><p>Push well past Chinchilla-optimal — that's what turns "grammatical" into "fluent."</p></div>
+      <div class="card"><h3>Experiment in parallel, kill losers</h3><p>Run a fleet at once and self-abandon the bad runs. Don't tune one model at a time.</p></div>
+      <div class="card"><h3>Make long jobs durable</h3><p>Detach from your laptop, checkpoint often, resume on retry. We lost a model to a non-detached run.</p></div>
+      <div class="card"><h3>Smoke-test before you spend</h3><p>A $2 tiny run catches the bugs that would waste a $200 one.</p></div>
+    </div>
+
+    <h3 class="sub-h">What it costs — and what each scale actually buys you</h3>
+    <p style="color:var(--gray);font-size:15px;max-width:64ch;margin-top:6px">Estimates for a <i>biomedical</i> model,
+      extrapolated from published comparables (BioGPT-347M, BioMedLM-2.7B, PMC-LLaMA) and scaling laws. Real numbers vary.</p>
+    <table class="tbl">
+      <thead><tr><th>Model size</th><th>~Train cost</th><th>~Tokens</th><th>Expected MedMCQA</th><th>What you get</th></tr></thead>
+      <tbody>
+        <tr class="win"><td><b>350M (this project)</b></td><td>$400–700</td><td>~20B</td><td>~0.29 (≈chance)</td><td>fluent writer / explainer; great demo</td></tr>
+        <tr><td>1B</td><td>~$2–4k</td><td>~60–100B</td><td>~0.35–0.42</td><td>sharper facts; PubMedQA ~0.70</td></tr>
+        <tr><td>2.7B (BioMedLM-class)</td><td>~$8–15k</td><td>~200B</td><td>~0.45–0.50</td><td>real domain assistant</td></tr>
+        <tr><td>7B + SFT + RLHF + RAG</td><td>~$30–80k</td><td>~300B–1T</td><td>~0.55–0.65</td><td>deployable expert assistant</td></tr>
+        <tr><td>Frontier (GPT-4-class)</td><td>$$$$ (API)</td><td>—</td><td>~0.90</td><td>needs frontier scale + RLHF</td></tr>
+      </tbody>
+    </table>
+    <p style="color:var(--gray);font-size:15px;max-width:66ch;margin-top:14px"><b>Cheapest win that isn't scale:</b>
+      add <b>retrieval (RAG)</b> — let the model look up source text at answer time. It can lift factual accuracy a lot
+      at ~1B scale without paying for 7B, and is the highest-ROI next step for most enterprises.</p>
+  </div>
+</section>
+
+<!-- 09 OPEN SOURCE -->
+<section class="block" id="opensource">
+  <div class="wrap reveal">
+    <div class="knum">09</div>
     <h2>Everything is open & reproducible.</h2>
     <p class="lead">The full repository documents <b>every experiment, every GPU, the cost breakdown, and
       step-by-step commands</b> — so anyone can rebuild this from scratch. Nothing is hidden.</p>

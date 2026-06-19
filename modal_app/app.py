@@ -580,6 +580,51 @@ def finalize_winner(name: str = "prod_winner_v2"):
     print(f"spawned finalize for {name}: {call.object_id}  -> results at /vol/runs/{name}/eval.json")
 
 
+@app.function(gpu="L4", volumes=VOLUMES, timeout=600)
+def verify_from_scratch(prompt="What is aspirin?"):
+    """Hard proof the answers come from OUR from-scratch weights, not a borrowed/external model."""
+    import torch, math, torch.nn.functional as F
+    sys.path.insert(0, "/root/src")
+    vol.reload()
+    from config import ModelConfig
+    from model import GPT
+    from tokenizers import Tokenizer
+    ck = torch.load("/vol/runs/prod_winner_v2/best_sft.pt", map_location="cuda")
+    mcfg = ModelConfig(**ck["model_config"])
+    model = GPT(mcfg).to("cuda").eval()
+    model.load_state_dict({k.replace("_orig_mod.", ""): v for k, v in ck["model"].items()})
+    tok = Tokenizer.from_file("/vol/tokenizer/tokenizer.json")
+    nparams = sum(p.numel() for p in model.parameters())
+    keys = list(ck["model"].keys())
+    ids = tok.encode(f"<|user|>\n{prompt}<|assistant|>\n").ids
+    x = torch.tensor(ids, device="cuda").unsqueeze(0)
+    with torch.no_grad():
+        logits, _ = model(x)
+    probs = F.softmax(logits[0, -1].float(), dim=-1)
+    tk = torch.topk(probs, 8)
+    top = [[tok.decode([i]), round(float(p), 4)] for p, i in zip(tk.values.tolist(), tk.indices.tolist())]
+    return {
+        "param_count_exact": int(nparams),
+        "param_count_M": round(nparams / 1e6, 1),
+        "checkpoint_config": ck["model_config"],
+        "vocab_size": tok.get_vocab_size(),
+        "n_weight_tensors": len(keys),
+        "state_dict_key_sample": keys[:6] + ["…"] + keys[-3:],
+        "loss_of_a_RANDOM_model_ln_vocab": round(math.log(mcfg.vocab_size), 3),
+        "our_logged_step0_val_loss": 10.606,
+        "our_final_val_loss": 2.27,
+        "prompt": prompt,
+        "our_tokenizer_ids_for_prompt": ids,
+        "raw_top8_next_tokens_over_our_32k_vocab": top,
+    }
+
+
+@app.local_entrypoint()
+def verify(prompt: str = "What is aspirin?"):
+    import json as _j
+    print(_j.dumps(verify_from_scratch.remote(prompt), indent=2))
+
+
 @app.local_entrypoint()
 def sft_data(n_medmcqa: int = 30000, n_pubmedqa: int = 30000, n_general: int = 10000):
     print(build_sft_data.remote(n_medmcqa, n_pubmedqa, n_general))
