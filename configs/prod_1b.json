@@ -1,0 +1,43 @@
+{
+  "model": {
+    "vocab_size": 32000,
+    "dim": 2048,
+    "n_layers": 24,
+    "n_heads": 16,
+    "max_seq_len": 2048,
+    "dropout": 0.05
+  },
+  "train": {
+    "group": "prod_1b",
+    "data_dir": "/vol/data",
+    "tokenizer_path": "/vol/tokenizer/tokenizer.json",
+    "mix": {
+      "fineweb_edu": 0.60,
+      "pubmed": 0.18,
+      "pmc_commercial": 0.17,
+      "medrag_pubmed": 0.03,
+      "guidelines": 0.015,
+      "med_textbooks": 0.005
+    },
+    "seq_len": 2048,
+    "batch_size": 10,
+    "grad_accum": 12,
+    "lr": 0.0005,
+    "min_lr": 5e-05,
+    "warmup_steps": 1000,
+    "max_steps": 15500,
+    "target_tokens": 30000000000,
+    "eval_interval": 400,
+    "eval_steps": 100,
+    "log_interval": 50,
+    "save_interval": 1000,
+    "abandon_enable": true,
+    "abandon_min_steps": 4000,
+    "abandon_patience": 15,
+    "abandon_loss_ceiling": 4.0,
+    "dtype": "bfloat16",
+    "compile": true,
+    "seed": 1337,
+    "name": "prod_1b"
+  }
+}

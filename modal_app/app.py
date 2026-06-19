@@ -410,10 +410,26 @@ def sweep(poll: int = 30, max_wait_min: int = 120):
 
 @app.local_entrypoint()
 def status(group: str = "ablations"):
-    """One-shot leaderboard from the metrics Dict. group = ablations | prod_fleet."""
+    """One-shot leaderboard from the metrics Dict. group = ablations | prod_fleet | scale_1b."""
     cfgs = sorted(glob.glob(f"{REPO}/configs/{group}/*.json"))
     names = [json.load(open(cf))["train"]["name"] for cf in cfgs]
     _print_board(names, time.time())
+
+
+@app.local_entrypoint()
+def launch_group(group: str, gpus: int = 4):
+    """Spawn every config in configs/<group>/ on `gpus` H100s each, detached."""
+    fn = {1: train, 4: train4, 8: train_big}.get(gpus, train4)
+    cfgs = sorted(glob.glob(f"{REPO}/configs/{group}/*.json"))
+    for cf in cfgs:
+        cfg = json.load(open(cf)); name = cfg["train"]["name"]
+        try:
+            metrics.pop(name)
+        except Exception:
+            pass
+        fn.spawn(cfg)
+        print(f"spawned {name} on {gpus}x H100  (lr={cfg['train'].get('lr')} mix={cfg['train'].get('mix')})")
+    print(f"launched {len(cfgs)} runs from configs/{group}/ on {gpus}x H100 each")
 
 
 @app.local_entrypoint()

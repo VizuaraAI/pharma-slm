@@ -1,0 +1,40 @@
+{
+  "model": {
+    "vocab_size": 32000,
+    "dim": 2048,
+    "n_layers": 24,
+    "n_heads": 16,
+    "max_seq_len": 2048,
+    "dropout": 0.05
+  },
+  "train": {
+    "group": "scale1b",
+    "data_dir": "/vol/data",
+    "tokenizer_path": "/vol/tokenizer/tokenizer.json",
+    "mix": {
+      "fineweb_edu": 0.6,
+      "pubmed": 0.25,
+      "pmc_commercial": 0.15
+    },
+    "seq_len": 1024,
+    "batch_size": 12,
+    "grad_accum": 8,
+    "min_lr": 1e-05,
+    "warmup_steps": 120,
+    "max_steps": 4000,
+    "target_tokens": 400000000,
+    "eval_interval": 200,
+    "eval_steps": 40,
+    "log_interval": 25,
+    "save_interval": 4000,
+    "abandon_enable": true,
+    "abandon_min_steps": 600,
+    "abandon_patience": 4,
+    "abandon_loss_ceiling": 8.0,
+    "dtype": "bfloat16",
+    "compile": true,
+    "seed": 1337,
+    "name": "scale1b_lr8e4",
+    "lr": 0.0008
+  }
+}
