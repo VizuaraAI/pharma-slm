@@ -6,7 +6,7 @@ pharmaceutical language model**, trained entirely from scratch (no borrowed weig
 This repo is the full record of the project: every experiment, every GPU, every cost, and every command
 needed to reproduce it end-to-end.
 
-- **Live demo:** _(Vercel link added on deploy)_ — chat with the model + watch it take a medical MCQ exam.
+- **Live demo:** **https://pharma-slm-vizuara.vercel.app** — chat with the model + watch it take a medical MCQ exam.
 - **Live inference API:** `https://teamvizuara--pharma-slm-serve-web.modal.run` (`/generate`, `/mcq`, `/health`)
 - **Final model:** `prod_winner_v2` — 350M params, trained on ~20B tokens, then instruction-tuned (SFT).
 
