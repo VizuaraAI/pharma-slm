@@ -1,0 +1,21 @@
+{
+  "_note": "350M from-scratch pharma SLM, ~4B tokens each (stopped early). MedMCQA chance=0.25, PubMedQA chance~0.33-0.5.",
+  "prod_d45": {
+    "domain_fraction": 0.45,
+    "base": {"medmcqa": 0.289, "pubmedqa": 0.548},
+    "sft":  {"medmcqa": 0.304, "pubmedqa": 0.598}
+  },
+  "prod_d60": {
+    "domain_fraction": 0.60,
+    "base": {"medmcqa": 0.291, "pubmedqa": 0.528},
+    "sft":  {"medmcqa": 0.300, "pubmedqa": 0.608}
+  },
+  "prod_d75": {
+    "domain_fraction": 0.75,
+    "base": {"medmcqa": 0.294, "pubmedqa": 0.346},
+    "sft":  {"medmcqa": 0.288, "pubmedqa": 0.590},
+    "_finding": "best pretraining val-loss but worst downstream QA -> over-repetition overfit (1B corpus x ~9 epochs)"
+  },
+  "winner": "prod_d60",
+  "key_finding": "Balanced 45-60% domain mix wins downstream; max-domain (75%) overfits. Lower perplexity != better answers. SFT improves every metric, esp PubMedQA."
+}

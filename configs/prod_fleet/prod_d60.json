@@ -1,0 +1,39 @@
+{
+  "model": {
+    "vocab_size": 32000,
+    "dim": 1024,
+    "n_layers": 24,
+    "n_heads": 16,
+    "max_seq_len": 2048,
+    "dropout": 0.05
+  },
+  "train": {
+    "group": "prod_fleet",
+    "data_dir": "/vol/data",
+    "tokenizer_path": "/vol/tokenizer/tokenizer.json",
+    "seq_len": 2048,
+    "batch_size": 16,
+    "grad_accum": 8,
+    "lr": 0.001,
+    "min_lr": 0.0001,
+    "warmup_steps": 700,
+    "max_steps": 11500,
+    "target_tokens": 12000000000,
+    "eval_interval": 250,
+    "eval_steps": 100,
+    "log_interval": 50,
+    "save_interval": 1500,
+    "abandon_enable": true,
+    "abandon_min_steps": 3000,
+    "abandon_patience": 15,
+    "abandon_loss_ceiling": 4.0,
+    "dtype": "bfloat16",
+    "compile": true,
+    "seed": 1337,
+    "name": "prod_d60",
+    "mix": {
+      "fineweb_edu": 0.4,
+      "pubmed": 0.6
+    }
+  }
+}

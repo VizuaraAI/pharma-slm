@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+*.pt
+*.bin
+*.log
+.vercel/
+node_modules/
+.ipynb_checkpoints/

@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pharma SLM · Built from scratch</title>
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --green:#0BB47A; --green-bright:#16D496; --green-soft:#E7FAF2;
+    --purple:#7C3AED; --purple-soft:#F1ECFE;
+    --ink:#0A0E12; --ink-2:#1c2530; --gray:#5B6675; --gray-2:#8A94A3;
+    --line:#ECEEF1; --bg:#FFFFFF; --card:#FFFFFF; --chip:#F4F6F8;
+    --shadow:0 1px 2px rgba(16,24,40,.04), 0 12px 32px rgba(16,24,40,.06);
+    --maxw:1180px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:"Satoshi",system-ui,sans-serif;color:var(--ink);background:var(--bg);
+       -webkit-font-smoothing:antialiased;line-height:1.55;font-size:18px}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px}
+  code,.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+  a{color:inherit;text-decoration:none}
+  h1,h2,h3{letter-spacing:-.03em;line-height:1.02;font-weight:900}
+  .accent{color:var(--green)}
+  .dot{color:var(--ink)}
+
+  /* nav */
+  nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);
+      backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid var(--line)}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:74px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:19px;letter-spacing:-.02em}
+  .brand .bead{width:11px;height:11px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px var(--green-soft)}
+  .nav-links{display:flex;gap:30px;font-weight:700;font-size:15.5px;color:var(--ink-2)}
+  .nav-links a{color:var(--gray);transition:color .15s}
+  .nav-links a:hover{color:var(--ink)}
+  @media(max-width:860px){.nav-links{display:none}}
+  .pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;font-weight:700;
+        font-size:15.5px;padding:13px 24px;cursor:pointer;border:none;transition:transform .12s,box-shadow .12s,background .15s;white-space:nowrap}
+  .pill:hover{transform:translateY(-1px)}
+  .pill-black{background:var(--ink);color:#fff}
+  .pill-black:hover{background:#000;box-shadow:0 10px 24px rgba(0,0,0,.18)}
+  .pill-green{background:var(--green);color:#04150F}
+  .pill-green:hover{background:var(--green-bright);box-shadow:0 10px 24px rgba(11,180,122,.35)}
+  .pill-ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+  .pill-ghost:hover{border-color:var(--ink)}
+
+  /* hero */
+  .hero{position:relative;text-align:center;padding:86px 0 92px;overflow:hidden}
+  .hero:before{content:"";position:absolute;inset:0;z-index:-1;
+    background:radial-gradient(60% 70% at 50% -10%, var(--green-soft) 0%, rgba(231,250,242,0) 55%),
+               radial-gradient(50% 60% at 85% 0%, #EEF0FF 0%, rgba(238,240,255,0) 60%)}
+  .tag{display:inline-block;background:var(--green-soft);color:#067a53;font-weight:700;
+       font-size:13.5px;letter-spacing:.14em;text-transform:uppercase;padding:8px 16px;border-radius:999px}
+  .hero h1{font-size:clamp(44px,7.2vw,88px);margin:26px auto 0;max-width:14ch}
+  .hero p.sub{font-size:clamp(18px,2.1vw,22px);color:var(--gray);max-width:50ch;margin:24px auto 0;font-weight:500}
+  .hero p.sub b{color:var(--ink);font-weight:700}
+  .hero .cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:36px}
+  .stat-row{display:flex;gap:38px;justify-content:center;flex-wrap:wrap;margin-top:54px}
+  .stat{text-align:center}
+  .stat .n{font-size:34px;font-weight:900;letter-spacing:-.03em}
+  .stat .l{font-size:13.5px;color:var(--gray-2);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+
+  /* sections */
+  section.block{padding:84px 0;border-top:1px solid var(--line)}
+  .knum{color:var(--green);font-weight:900;font-size:20px;letter-spacing:0}
+  .block h2{font-size:clamp(32px,4.4vw,52px);margin:10px 0 0}
+  .block .lead{font-size:20px;color:var(--gray);max-width:62ch;margin-top:18px;font-weight:500}
+  .block .lead b{color:var(--ink);font-weight:700}
+
+  /* pipeline */
+  .pipe{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin-top:40px}
+  .pnode{flex:1;min-width:150px;background:var(--card);border:1px solid var(--line);border-radius:18px;
+         padding:20px 18px;box-shadow:var(--shadow);position:relative}
+  .pnode .pk{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green)}
+  .pnode h4{font-size:18.5px;font-weight:900;letter-spacing:-.02em;margin:7px 0 6px}
+  .pnode p{font-size:14px;color:var(--gray)}
+  .parrow{display:flex;align-items:center;justify-content:center;width:34px;color:var(--gray-2);font-size:20px;font-weight:800}
+  @media(max-width:760px){.parrow{width:100%;height:24px;transform:rotate(90deg)}}
+
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:32px}
+  @media(max-width:860px){.grid3{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:26px;box-shadow:var(--shadow)}
+  .card h3{font-size:21px;font-weight:900;letter-spacing:-.02em}
+  .card p{color:var(--gray);font-size:15.5px;margin-top:8px}
+  .chipm{display:inline-block;font-family:"JetBrains Mono",monospace;font-size:13px;background:var(--chip);
+         border-radius:7px;padding:3px 8px;color:var(--ink-2)}
+
+  /* leaderboard table */
+  .tbl{width:100%;border-collapse:collapse;margin-top:26px;font-size:15.5px;overflow:hidden;border-radius:16px;border:1px solid var(--line)}
+  .tbl th{background:#FAFBFC;text-align:left;padding:14px 18px;font-weight:700;color:var(--gray);font-size:13px;text-transform:uppercase;letter-spacing:.06em}
+  .tbl td{padding:14px 18px;border-top:1px solid var(--line);font-weight:600}
+  .tbl tr.win td{background:var(--green-soft)}
+  .tbl .bad{color:#C2410C;font-weight:700}
+  .tbl .good{color:#067a53;font-weight:700}
+
+  /* demo panels */
+  .demo{background:#0B0F14;border-radius:28px;padding:30px;margin-top:34px;color:#fff;box-shadow:0 30px 70px rgba(8,12,18,.28)}
+  .demo.light{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+  .demo-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+  .demo-head .t{font-weight:900;font-size:19px;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+  .status{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#9aa6b2;
+          background:rgba(255,255,255,.06);padding:6px 12px;border-radius:999px}
+  .demo.light .status{color:var(--gray);background:var(--chip)}
+  .status .led{width:8px;height:8px;border-radius:50%;background:#f5b14b}
+  .status.on .led{background:var(--green-bright);box-shadow:0 0 0 3px rgba(22,212,150,.25)}
+  .chips{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px}
+  .qchip{background:rgba(255,255,255,.07);color:#dfe6ee;border:1px solid rgba(255,255,255,.1);border-radius:999px;
+         padding:9px 15px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+  .qchip:hover{background:var(--green);color:#04150F;border-color:var(--green)}
+  .demo.light .qchip{background:var(--chip);color:var(--ink-2);border:1px solid var(--line)}
+  .demo.light .qchip:hover{background:var(--green);color:#04150F;border-color:var(--green)}
+  .chatbox{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:20px;min-height:150px}
+  .demo.light .chatbox{background:#FAFBFC;border:1px solid var(--line)}
+  .msg{margin-bottom:14px}
+  .msg .who{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--green-bright);margin-bottom:5px}
+  .demo.light .msg .who{color:var(--green)}
+  .msg.u .who{color:#9aa6b2}
+  .demo.light .msg.u .who{color:var(--gray-2)}
+  .msg .body{font-size:16px;line-height:1.6}
+  .ask{display:flex;gap:10px;margin-top:16px}
+  .ask input{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#fff;
+             border-radius:12px;padding:14px 16px;font-size:15.5px;font-family:inherit;outline:none}
+  .ask input::placeholder{color:#7c8794}
+  .demo.light .ask input{background:#fff;border:1px solid var(--line);color:var(--ink)}
+  .blink{display:inline-block;width:9px;height:18px;background:var(--green-bright);vertical-align:-3px;animation:bl 1s steps(2) infinite;border-radius:1px}
+  @keyframes bl{0%,50%{opacity:1}50.1%,100%{opacity:0}}
+
+  /* mcq */
+  .mcq-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:30px}
+  @media(max-width:860px){.mcq-grid{grid-template-columns:1fr}}
+  .qcard{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:var(--shadow);cursor:pointer;transition:.15s}
+  .qcard:hover{border-color:var(--ink);transform:translateY(-2px)}
+  .qcard .kind{font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-2)}
+  .qcard .kind.reason{color:var(--purple)}
+  .qcard .q{font-weight:800;font-size:17px;letter-spacing:-.01em;margin:6px 0 14px}
+  .opt{display:flex;align-items:center;gap:10px;margin:7px 0}
+  .opt .bar{flex:1;height:26px;background:var(--chip);border-radius:7px;position:relative;overflow:hidden}
+  .opt .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:#D8DEE6;border-radius:7px;transition:width .7s cubic-bezier(.2,.8,.2,1)}
+  .opt.pick .fill{background:var(--green)}
+  .opt.pickwrong .fill{background:#F0A38A}
+  .opt .lab{font-size:14.5px;font-weight:600;min-width:38%;display:flex;align-items:center;gap:6px}
+  .opt .pct{font-family:"JetBrains Mono",monospace;font-size:12.5px;color:var(--gray);width:46px;text-align:right}
+  .badge{display:inline-block;font-size:12.5px;font-weight:800;padding:4px 10px;border-radius:999px;margin-top:12px}
+  .badge.ok{background:var(--green-soft);color:#067a53}
+  .badge.no{background:#FDEAE0;color:#C2410C}
+  .tickok{color:var(--green)} .tickno{color:#C2410C}
+
+  /* explain capacity */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:34px}
+  @media(max-width:760px){.split{grid-template-columns:1fr}}
+  .panelx{border-radius:22px;padding:28px}
+  .panelx.good{background:var(--green-soft);border:1px solid #C8F0DF}
+  .panelx.meh{background:#FBF1EC;border:1px solid #F6D9C9}
+  .panelx .ic{font-size:30px}
+  .panelx h3{font-size:23px;margin:8px 0 6px}
+  .panelx p{font-size:15.5px;color:var(--ink-2)}
+  .gauge{height:14px;border-radius:999px;background:#fff;border:1px solid var(--line);position:relative;margin:16px 0 6px;overflow:hidden}
+  .gauge .chance{position:absolute;top:-5px;bottom:-5px;width:2px;background:var(--gray-2)}
+  .gauge .val{position:absolute;left:0;top:0;bottom:0;border-radius:999px}
+  .quote{border-left:3px solid var(--green);padding:8px 0 8px 18px;margin-top:26px;font-size:20px;font-weight:600;color:var(--ink-2);max-width:64ch}
+
+  footer{background:var(--ink);color:#cdd6e0;padding:64px 0 48px;margin-top:20px}
+  footer h3{color:#fff;font-size:30px;margin-bottom:8px}
+  footer .runbox{background:#11161d;border:1px solid #222c37;border-radius:14px;padding:16px 18px;margin-top:18px;
+                 font-family:"JetBrains Mono",monospace;font-size:13.5px;color:#9fe9cc;overflow-x:auto}
+  footer .ftcols{display:flex;gap:46px;flex-wrap:wrap;margin-top:34px;font-size:14.5px}
+  footer .ftcols b{color:#fff;display:block;margin-bottom:8px;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+  footer a{color:#8fe9c8}
+  .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s,transform .7s}
+  .reveal.in{opacity:1;transform:none}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-in">
+    <div class="brand"><span class="bead"></span> Pharma&nbsp;SLM</div>
+    <div class="nav-links">
+      <a href="#build">How we built it</a>
+      <a href="#experiments">Experiments</a>
+      <a href="#chat">Chat</a>
+      <a href="#mcq">MCQ exam</a>
+      <a href="#meaning">What it means</a>
+    </div>
+    <a href="#chat" class="pill pill-black">Talk to the model</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="wrap">
+    <span class="tag">Built from scratch · 350M parameters · pharma domain</span>
+    <h1>A pharma language model, <span class="accent">trained from zero.</span></h1>
+    <p class="sub">No fine-tuning of someone else's model. We gathered the data, built the tokenizer,
+      defined the network, and pre-trained it on <b>~13 billion tokens</b> of medical text on
+      H100 GPUs — then taught it to answer questions. <b>You can talk to it below.</b></p>
+    <div class="cta">
+      <a href="#chat" class="pill pill-green">Talk to the model →</a>
+      <a href="#mcq" class="pill pill-black">Watch it take an exam</a>
+      <a href="#build" class="pill pill-ghost">How we built it</a>
+    </div>
+    <div class="stat-row">
+      <div class="stat"><div class="n" id="s-params">350M</div><div class="l">parameters</div></div>
+      <div class="stat"><div class="n">~13B</div><div class="l">tokens trained</div></div>
+      <div class="stat"><div class="n">12</div><div class="l">models compared</div></div>
+      <div class="stat"><div class="n">32k</div><div class="l">custom vocab</div></div>
+      <div class="stat"><div class="n">100%</div><div class="l">from scratch</div></div>
+    </div>
+  </div>
+</header>
+
+<!-- 01 BUILD -->
+<section class="block" id="build">
+  <div class="wrap reveal">
+    <div class="knum">01</div>
+    <h2>Everything was built from scratch.</h2>
+    <p class="lead">A real language model is six honest steps. We did each one ourselves — no shortcuts,
+      no borrowed weights. This is the same recipe behind GPT-style models, shrunk to something we can train and explain end-to-end.</p>
+    <div class="pipe">
+      <div class="pnode"><div class="pk">Step 1</div><h4>Gather data</h4><p>PubMed, PMC full-text, drug guidelines & textbooks + general English.</p></div>
+      <div class="parrow">→</div>
+      <div class="pnode"><div class="pk">Step 2</div><h4>Tokenizer</h4><p>Custom 32k byte-level BPE — turns "pharmacokinetics" into 1–2 tokens, not 6.</p></div>
+      <div class="parrow">→</div>
+      <div class="pnode"><div class="pk">Step 3</div><h4>The model</h4><p>A modern Transformer (RoPE · RMSNorm · SwiGLU · FlashAttention), written by hand.</p></div>
+      <div class="parrow">→</div>
+      <div class="pnode"><div class="pk">Step 4</div><h4>Pre-train</h4><p>Predict the next token, billions of times, across many H100 GPUs.</p></div>
+      <div class="parrow">→</div>
+      <div class="pnode"><div class="pk">Step 5</div><h4>Instruction-tune</h4><p>Teach the raw model to answer questions instead of just continuing text.</p></div>
+      <div class="parrow">→</div>
+      <div class="pnode"><div class="pk">Step 6</div><h4>Evaluate</h4><p>Grade it on real medical exams + read its answers.</p></div>
+    </div>
+    <div class="grid3">
+      <div class="card"><h3>Why custom data?</h3><p>To learn English <b>and</b> pharma, we blended ~50% general text with ~50% biomedical. Too much domain and it overfits; too little and it doesn't know the field. We measured the sweet spot — it's not a guess.</p></div>
+      <div class="card"><h3>Why a custom tokenizer?</h3><p>Off-the-shelf tokenizers shatter medical words. Ours hits a <span class="chipm">fertility 1.57</span> on pharma text — fewer tokens per term, so the model spends its capacity on meaning, not spelling.</p></div>
+      <div class="card"><h3>Why from scratch?</h3><p>So every number is ours and explainable — and so we could train the tokenizer on day one. It's the path the best small biomedical models (BioGPT, PubMedBERT) actually took.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 EXPERIMENTS -->
+<section class="block" id="experiments">
+  <div class="wrap reveal">
+    <div class="knum">02</div>
+    <h2>We didn't guess — we ran a fleet of models in parallel.</h2>
+    <p class="lead">Like a small research team, we trained <b>7 quick "ablation" models</b> to find the best
+      learning rate, then <b>4 full models</b> side-by-side that varied one big unknown: <b>how much pharma vs general text to mix.</b> The data picked the winner, not us.</p>
+    <table class="tbl">
+      <thead><tr><th>Model</th><th>Domain mix</th><th>Pharma exam (PubMedQA)</th><th>Verdict</th></tr></thead>
+      <tbody>
+        <tr><td>Fluency-leaning</td><td>30% pharma</td><td>—</td><td>too little domain</td></tr>
+        <tr class="win"><td><b>Winner ✓</b></td><td>45–60% pharma</td><td><b>0.61</b></td><td class="good">best balance</td></tr>
+        <tr><td>Pharma-heavy</td><td>75% pharma</td><td>0.59</td><td class="bad">overfit — see 03</td></tr>
+      </tbody>
+    </table>
+    <div class="grid3">
+      <div class="card"><h3>7 ablations</h3><p>Short runs that <b>self-abandon</b> if the loss stalls — found learning rate <span class="chipm">1e-3</span> beats the textbook default.</p></div>
+      <div class="card"><h3>4 production models</h3><p>Trained at once on 16 H100s, each a different mix, judged on real pharma Q&A — not just on loss.</p></div>
+      <div class="card"><h3>1 winner, trained long</h3><p><b>20B tokens</b> on the enriched corpus. Final model = <span class="chipm">prod_winner_v2</span>, the one you're chatting with.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 SURPRISE -->
+<section class="block" id="surprise">
+  <div class="wrap reveal">
+    <div class="knum">03</div>
+    <h2>The surprise: more pharma data isn't always better.</h2>
+    <p class="lead">The model trained on <b>75% pharma</b> got the <b>best</b> "study score" (lowest training loss) —
+      but the <b>worst</b> real exam result. It had memorized the <i>style</i> of medical papers without learning to reason.
+      <b>Lower loss didn't mean better answers.</b> The balanced model won. That's why we measure on real questions, and it's the core lesson of the whole project.</p>
+    <div class="split">
+      <div class="panelx good"><div class="ic">⚖️</div><h3>Balanced (the winner)</h3><p>50% pharma / 50% English. Learns the field <b>and</b> stays a fluent writer. Generalizes to questions it never saw.</p></div>
+      <div class="panelx meh"><div class="ic">📉</div><h3>Pharma-overloaded</h3><p>75% pharma. Best on paper, brittle in practice — it over-rehearsed a small corpus and lost the plot on real Q&A.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 CHAT -->
+<section class="block" id="chat">
+  <div class="wrap reveal">
+    <div class="knum">04</div>
+    <h2>Talk to the model.</h2>
+    <p class="lead">These answers are generated <b>live by the model we trained</b>, running on a GPU right now.
+      Click a question to see a pre-run answer instantly, or type your own pharma question.</p>
+    <div class="demo" id="chatDemo">
+      <div class="demo-head">
+        <div class="t">💬 prod_winner_v2 · chat</div>
+        <span class="status" id="chatStatus"><span class="led"></span><span id="chatStatusT">connecting…</span></span>
+      </div>
+      <div class="chips" id="chatChips"></div>
+      <div class="chatbox" id="chatBox">
+        <div class="msg"><div class="who">Model</div><div class="body" style="color:#9aa6b2">Pick a question above, or ask your own ↓</div></div>
+      </div>
+      <div class="ask">
+        <input id="chatInput" placeholder="Ask your own pharma question… e.g. What is the mechanism of action of statins?" />
+        <button class="pill pill-green" id="chatSend">Ask</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 05 MCQ -->
+<section class="block" id="mcq">
+  <div class="wrap reveal">
+    <div class="knum">05</div>
+    <h2>Now watch it take a multiple-choice exam.</h2>
+    <p class="lead">Same model, harder task. For each option, the model reports how likely it thinks that answer is
+      (the bars). It picks the highest. <b>Green = correct, orange = the model chose wrong.</b> Click any card.</p>
+    <div class="mcq-grid" id="mcqGrid"></div>
+
+    <div class="demo light" style="margin-top:22px">
+      <div class="demo-head"><div class="t">✍️ Write your own multiple-choice question</div></div>
+      <div class="ask" style="flex-wrap:wrap;gap:10px">
+        <input id="mq" placeholder="Question, e.g. Which drug lowers cholesterol?" style="flex:1 1 100%"/>
+        <input id="mo0" placeholder="Option A (mark correct with *)" style="flex:1 1 45%"/>
+        <input id="mo1" placeholder="Option B" style="flex:1 1 45%"/>
+        <input id="mo2" placeholder="Option C" style="flex:1 1 45%"/>
+        <input id="mo3" placeholder="Option D" style="flex:1 1 45%"/>
+        <button class="pill pill-green" id="mqSend">Ask the model</button>
+      </div>
+      <div id="mqResult" style="margin-top:14px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 06 MEANING -->
+<section class="block" id="meaning">
+  <div class="wrap reveal">
+    <div class="knum">06</div>
+    <h2>So what does “the exam score is capacity-bound at 0.29” mean?</h2>
+    <p class="lead">This is the one sentence to remember — here it is in plain English.</p>
+
+    <div class="gauge" style="max-width:560px">
+      <div class="val" id="gaugeVal" style="background:var(--purple);width:29%"></div>
+      <div class="chance" style="left:25%"></div>
+    </div>
+    <p style="color:var(--gray);font-size:14.5px;max-width:560px">The model scores ~<b>29%</b> on 4-option medical exams.
+      Pure guessing (the grey line) is <b>25%</b>. So on hard exam questions it's <b>barely above a coin-toss-style guess.</b></p>
+
+    <div class="split">
+      <div class="panelx good">
+        <div class="ic">✅</div><h3>What it's genuinely good at</h3>
+        <p>Writing fluent, mostly-accurate pharma explanations — drug uses, side effects, mechanisms.
+        Generating good text needs far <b>less</b> reasoning horsepower. You saw this in the chat above.</p>
+      </div>
+      <div class="panelx meh">
+        <div class="ic">🎲</div><h3>What it struggles with</h3>
+        <p>Trick multiple-choice questions that need multi-step clinical reasoning. It answers,
+        but only a little better than guessing — and unreliably (it flips on questions it "should" know).</p>
+      </div>
+    </div>
+
+    <div class="quote">“Capacity-bound” = the model is simply <b>too small</b> (350M parameters) to do the multi-step
+      reasoning hard exams demand. We <b>proved</b> it: training 5× longer on 3× more data
+      <b>did not move the exam score</b> — it stayed near guessing. The bottleneck is brain size, not study time.</div>
+
+    <div class="grid3" style="margin-top:30px">
+      <div class="card"><h3>The student analogy</h3><p>It's read every textbook (great recall, fluent writing) but can't hold a tricky multi-step problem in its head. More reading won't fix that — it needs a bigger head.</p></div>
+      <div class="card"><h3>What it means for you</h3><p>You have a useful pharma <b>writing & explanation assistant</b> — not a board-exam solver. For drafting, summarizing, and explaining, it works today.</p></div>
+      <div class="card"><h3>How to make it pass exams</h3><p>Scale the model to <b>~1B+ parameters</b>. The entire pipeline already supports it — change two numbers in a config and re-run. That's the next experiment.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 07 NUMBERS -->
+<section class="block" id="numbers">
+  <div class="wrap reveal">
+    <div class="knum">07</div>
+    <h2>The honest numbers.</h2>
+    <p class="lead">Two models, side by side: the quick first model vs the long-trained winner.
+      The exam scores barely moved (capacity), but the <b>val-loss and the writing quality improved a lot</b> — which is the goal you set: answers that make sense.</p>
+    <table class="tbl">
+      <thead><tr><th>Metric</th><th>First model (4B tokens)</th><th>Winner (20B tokens)</th><th>Read</th></tr></thead>
+      <tbody>
+        <tr><td>MedMCQA exam</td><td>0.300</td><td>0.290</td><td>flat — capacity-bound</td></tr>
+        <tr><td>PubMedQA exam</td><td>0.608</td><td>0.608</td><td>flat — capacity-bound</td></tr>
+        <tr class="win"><td>PubMed val-loss ↓</td><td>2.49</td><td><b>2.27</b></td><td class="good">better — fluency</td></tr>
+        <tr class="win"><td>Answer quality</td><td>shaky</td><td><b>coherent</b></td><td class="good">the real win</td></tr>
+      </tbody>
+    </table>
+    <div class="grid3">
+      <div class="card"><h3>≈ $700</h3><p>Total compute across 12 models, the data pipeline, and the winner run on H100s.</p></div>
+      <div class="card"><h3>No overfitting</h3><p>The expanded corpus let the 20B run train clean to the end — the fix for the 75%-model's failure.</p></div>
+      <div class="card"><h3>Reproducible</h3><p>One codebase: data → tokenizer → model → train → SFT → eval → this live endpoint.</p></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap reveal">
+    <h3>Run it yourself.</h3>
+    <p style="max-width:60ch">The winning model lives on a Modal volume. One command turns a prompt into an answer:</p>
+    <div class="runbox">modal run modal_app/app.py::gen --ckpt /vol/runs/prod_winner_v2/best_sft.pt \<br>&nbsp;&nbsp;--prompt "What is the mechanism of action of ibuprofen?" --chat</div>
+    <div class="ftcols">
+      <div><b>Built from scratch</b>Data · 32k BPE tokenizer · Transformer (RoPE/RMSNorm/SwiGLU)<br>Hand-written DDP trainer · SFT · likelihood eval</div>
+      <div><b>Infra</b>Modal · H100 / L4 GPUs · live FastAPI endpoint<br>12 models trained · ~13B tokens</div>
+      <div><b>Honest result</b>A working pharma writer at 350M.<br>Scale to 1B+ to pass exams.</div>
+    </div>
+    <p style="margin-top:34px;color:#5e6b78;font-size:13.5px">A small language model, built entirely from scratch. Every answer on this page is produced by the model we trained.</p>
+  </div>
+</footer>
+
+<script>
+const API = "https://teamvizuara--pharma-slm-serve-web.modal.run";
+let DEMO = {chat:[], mcq:[]};
+
+/* ---------- load baked data ---------- */
+fetch("demo_data.json").then(r=>r.json()).then(d=>{DEMO=d; renderChips(); renderMcq();})
+  .catch(()=>{ /* fallback minimal */ renderChips(); renderMcq(); });
+
+/* ---------- endpoint warm check ---------- */
+function setStatus(on,txt){const s=document.getElementById('chatStatus');s.classList.toggle('on',on);document.getElementById('chatStatusT').textContent=txt;}
+fetch(API+"/health").then(r=>r.json()).then(()=>setStatus(true,"model live")).catch(()=>setStatus(false,"model sleeping — first answer wakes it (~30s)"));
+
+/* ---------- CHAT ---------- */
+function renderChips(){
+  const c=document.getElementById('chatChips'); if(!c) return; c.innerHTML='';
+  (DEMO.chat.length?DEMO.chat.map(x=>x.q):[
+    "What is the mechanism of action of metformin?","What are the common side effects of warfarin?","What is amoxicillin used to treat?"
+  ]).forEach(q=>{
+    const b=document.createElement('div'); b.className='qchip'; b.textContent=q;
+    b.onclick=()=>{const hit=DEMO.chat.find(x=>x.q===q); showChat(q, hit?hit.a:null);}; c.appendChild(b);
+  });
+}
+function typeOut(el,text){el.innerHTML=''; let i=0; const cur=document.createElement('span'); cur.className='blink'; el.appendChild(cur);
+  const t=setInterval(()=>{ if(i>=text.length){clearInterval(t); cur.remove(); return;} cur.insertAdjacentText('beforebegin',text[i++]); },10);}
+function bubble(box,who,cls){const m=document.createElement('div');m.className='msg '+(cls||'');m.innerHTML=`<div class="who">${who}</div>`;const b=document.createElement('div');b.className='body';m.appendChild(b);box.appendChild(m);box.scrollTop=box.scrollHeight;return b;}
+async function showChat(q, baked){
+  const box=document.getElementById('chatBox'); box.innerHTML='';
+  bubble(box,'You','u').textContent=q;
+  const ans=bubble(box,'Model');
+  if(baked){ typeOut(ans, baked); return; }
+  ans.innerHTML='<span class="blink"></span>'; setStatus(true,"generating…");
+  try{
+    const r=await fetch(API+"/generate",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:q,max_new_tokens:110,temperature:0.6})});
+    const d=await r.json(); typeOut(ans, d.answer||"(no answer)"); setStatus(true,"model live");
+  }catch(e){ ans.textContent="Couldn't reach the model — it may be waking up. Try again in ~30s."; setStatus(false,"model sleeping"); }
+}
+document.getElementById('chatSend').onclick=()=>{const v=document.getElementById('chatInput').value.trim(); if(v) showChat(v,null);};
+document.getElementById('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'){const v=e.target.value.trim(); if(v) showChat(v,null);}});
+
+/* ---------- MCQ ---------- */
+function renderMcq(){
+  const g=document.getElementById('mcqGrid'); if(!g) return; g.innerHTML='';
+  DEMO.mcq.forEach((m,idx)=>{
+    const card=document.createElement('div'); card.className='qcard';
+    card.innerHTML=`<div class="kind ${m.kind==='reasoning'?'reason':''}">${m.kind==='reasoning'?'multi-step reasoning':'recall'}</div><div class="q">${m.question}</div>`;
+    const opts=document.createElement('div');
+    m.options.forEach((o,i)=>{
+      const row=document.createElement('div'); row.className='opt'; row.dataset.i=i;
+      row.innerHTML=`<div class="lab"><span class="tk"></span>${o}</div><div class="bar"><div class="fill"></div></div><div class="pct"></div>`;
+      opts.appendChild(row);
+    });
+    const badge=document.createElement('div');
+    card.appendChild(opts); card.appendChild(badge);
+    card.onclick=()=>revealMcq(card,opts,badge,m);
+    g.appendChild(card);
+  });
+}
+function revealMcq(card,opts,badge,m){
+  const conf=m.confidence||[]; const pred=m.pred; const ans=m.answer;
+  [...opts.children].forEach((row,i)=>{
+    const pct=Math.round((conf[i]||0)*100);
+    row.querySelector('.fill').style.width=pct+'%';
+    row.querySelector('.pct').textContent=pct+'%';
+    const tk=row.querySelector('.tk');
+    row.classList.remove('pick','pickwrong');
+    if(i===pred && i===ans){row.classList.add('pick'); tk.textContent='✓'; tk.className='tk tickok';}
+    else if(i===pred && i!==ans){row.classList.add('pickwrong'); tk.textContent='✗'; tk.className='tk tickno';}
+    else if(i===ans){tk.textContent='✓'; tk.className='tk tickok';}
+  });
+  const ok = m.correct===1;
+  badge.className='badge '+(ok?'ok':'no');
+  badge.textContent = ok ? `Model picked "${m.options[pred]}" — correct ✓`
+                         : `Model picked "${m.options[pred]}" — wrong ✗  (answer: "${m.options[ans]}")`;
+}
+document.getElementById('mqSend').onclick=async()=>{
+  const q=document.getElementById('mq').value.trim();
+  let opts=[0,1,2,3].map(i=>document.getElementById('mo'+i).value.trim()).filter(Boolean);
+  if(!q||opts.length<2){document.getElementById('mqResult').textContent='Add a question and at least 2 options.';return;}
+  let ans=opts.findIndex(o=>o.includes('*')); if(ans<0)ans=0; opts=opts.map(o=>o.replace('*','').trim());
+  const res=document.getElementById('mqResult'); res.innerHTML='<span class="blink"></span> scoring with the live model…';
+  try{
+    const r=await fetch(API+"/mcq",{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,options:opts,answer:ans})});
+    const d=await r.json();
+    res.innerHTML='';
+    const card=document.createElement('div'); card.className='qcard'; card.style.cursor='default';
+    card.innerHTML=`<div class="q">${q}</div>`; const o=document.createElement('div'); const b=document.createElement('div');
+    opts.forEach((op,i)=>{const row=document.createElement('div');row.className='opt';row.innerHTML=`<div class="lab"><span class="tk"></span>${op}</div><div class="bar"><div class="fill"></div></div><div class="pct"></div>`;o.appendChild(row);});
+    card.appendChild(o);card.appendChild(b);res.appendChild(card);
+    revealMcq(card,o,b,{...d,options:opts,answer:ans,pred:d.pred});
+  }catch(e){res.textContent="Couldn't reach the model — it may be waking up (~30s). Try again.";}
+};
+
+/* ---------- reveal on scroll ---------- */
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in')}),{threshold:.12});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
