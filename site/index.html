@@ -184,7 +184,10 @@
       <a href="#mcq">MCQ exam</a>
       <a href="#meaning">What it means</a>
     </div>
-    <a href="#chat" class="pill pill-black">Talk to the model</a>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="https://github.com/VizuaraAI/pharma-slm" target="_blank" rel="noopener" class="pill pill-ghost" style="padding:11px 18px">★ GitHub</a>
+      <a href="#chat" class="pill pill-black">Talk to the model</a>
+    </div>
   </div>
 </nav>
 
@@ -388,6 +391,32 @@
   </div>
 </section>
 
+<!-- 08 OPEN SOURCE -->
+<section class="block" id="opensource">
+  <div class="wrap reveal">
+    <div class="knum">08</div>
+    <h2>Everything is open & reproducible.</h2>
+    <p class="lead">The full repository documents <b>every experiment, every GPU, the cost breakdown, and
+      step-by-step commands</b> — so anyone can rebuild this from scratch. Nothing is hidden.</p>
+    <div class="demo" style="background:#0B0F14;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap">
+      <div style="max-width:60ch">
+        <div style="font-weight:900;font-size:24px;letter-spacing:-.02em;color:#fff">github.com/VizuaraAI/pharma-slm</div>
+        <p style="color:#9aa6b2;margin-top:10px;font-size:15.5px">A complete README + code: the 12-model
+          experiment log, the ~$400–700 / ~100 H100-hour cost table, exact data sources & licenses, the
+          model/tokenizer/training internals, the 7 real bugs we hit and their fixes, and a 10-step
+          reproduce-it-end-to-end guide.</p>
+        <div class="chips" style="margin-top:16px">
+          <span class="qchip" style="cursor:default">📋 All experiments</span>
+          <span class="qchip" style="cursor:default">💸 Cost & GPUs</span>
+          <span class="qchip" style="cursor:default">🧬 Data sources</span>
+          <span class="qchip" style="cursor:default">⚙️ Reproduce steps</span>
+        </div>
+      </div>
+      <a href="https://github.com/VizuaraAI/pharma-slm" target="_blank" rel="noopener" class="pill pill-green" style="font-size:17px;padding:16px 28px">View the repository →</a>
+    </div>
+  </div>
+</section>
+
 <footer>
   <div class="wrap reveal">
     <h3>Run it yourself.</h3>
@@ -398,7 +427,8 @@
       <div><b>Infra</b>Modal · H100 / L4 GPUs · live FastAPI endpoint<br>12 models trained · ~13B tokens</div>
       <div><b>Honest result</b>A working pharma writer at 350M.<br>Scale to 1B+ to pass exams.</div>
     </div>
-    <p style="margin-top:34px;color:#5e6b78;font-size:13.5px">A small language model, built entirely from scratch. Every answer on this page is produced by the model we trained.</p>
+    <p style="margin-top:34px;color:#5e6b78;font-size:13.5px">A small language model, built entirely from scratch. Every answer on this page is produced by the model we trained. ·
+      <a href="https://github.com/VizuaraAI/pharma-slm" target="_blank" rel="noopener">Full source & docs on GitHub →</a></p>
   </div>
 </footer>
 
