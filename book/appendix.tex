@@ -1,0 +1,86 @@
+\appendix
+\part{Appendices}
+
+\chapter{Reproduce it end to end}
+The whole project is one command per step. Prerequisites: Python 3.11 and a Modal account.
+
+\begin{lstlisting}[language=bash]
+pip install modal && modal token set --token-id ... --token-secret ...
+git clone https://github.com/VizuaraAI/pharma-slm && cd pharma-slm
+
+# 1) custom 32k tokenizer (CPU, ~10 min)
+modal run --detach modal_app/app.py::setup_tokenizer \
+    --general-docs 200000 --domain-docs 200000 --vocab-size 32000
+# 2) tokenize the corpus, shard-parallel (CPU)
+modal run --detach modal_app/app.py::prepare_all --only fineweb_edu,pubmed
+modal run --detach modal_app/app.py::prepare_all \
+    --only medrag_pubmed,pmc_commercial,guidelines,med_textbooks
+# 3) tiny end-to-end smoke test (1xH100, ~3 min)
+modal run modal_app/app.py::smoke
+# 4) ablation sweep -> best learning rate/mix (7xH100, ~35 min)
+python configs/sweep.py && modal run --detach modal_app/app.py::sweep
+# 5) production fleet -> best mix (16xH100)
+python configs/fleet.py && modal run --detach modal_app/app.py::prod_fleet
+# 6) SFT data
+modal run modal_app/app.py::sft_data
+# 7) train the winner (8xH100)
+modal run --detach modal_app/app.py::launch_prod --config-file configs/winner_v2.json
+# 8) SFT + eval + samples
+modal run --detach modal_app/app.py::finalize_winner
+# 9) scale up to 1.3B
+python configs/scale_1b.py
+modal run --detach modal_app/app.py::launch_prod --config-file configs/prod_1b.json
+# 10) RAG index + serve + demo site
+modal run --detach modal_app/app.py::build_rag
+modal deploy modal_app/serve.py
+\end{lstlisting}
+
+\chapter{Key configurations}
+\section{The 350M model}
+dim 1024 $\cdot$ 24 layers $\cdot$ 16 heads $\cdot$ context 2048 $\cdot$ vocab 32000 $\cdot$ tied embeddings
+$\cdot$ RoPE/RMSNorm/SwiGLU/Flash $\cdot$ $\approx$341M params.
+
+\section{The 1.3B model}
+dim 2048 $\cdot$ 24 layers $\cdot$ 16 heads $\cdot$ context 2048 $\cdot$ $\approx$1.30B params $\cdot$
+learning rate 5e-4 (down from 1e-3 at 350M) $\cdot$ micro-batch 4, grad-accum 30 (memory).
+
+\section{The winning recipe}
+Learning rate 1e-3 (350M) / 5e-4 (1.3B) $\cdot$ cosine schedule, warmup $\cdot$ mix $\approx$50/50 general/domain
+$\cdot$ dropout 0.05 $\cdot$ bf16 $+$ \texttt{torch.compile} $\cdot$ over-trained to 20--30B tokens.
+
+\chapter{Data \& model sources}
+\begin{center}\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Asset} & \textbf{Source} & \textbf{Use}\\
+\midrule
+FineWeb-Edu & \texttt{HuggingFaceFW/fineweb-edu} & general pretraining\\
+PubMed abstracts & \texttt{casinca/PUBMED\ldots} & domain pretraining \& RAG\\
+PubMed Central & \texttt{TaylorAI/pubmed\_commercial} & domain pretraining\\
+MedRAG / PubMed & \texttt{MedRAG/pubmed} & domain pretraining\\
+Clinical guidelines & \texttt{epfl-llm/guidelines} & domain pretraining\\
+SFT --- exams & \texttt{openlifescienceai/medmcqa} (train) & instruction tuning\\
+SFT --- QA & \texttt{bigbio/pubmed\_qa} (artificial) & instruction tuning\\
+Embeddings (RAG) & \texttt{NeuML/pubmedbert\ldots} & 300k-passage index\\
+\bottomrule
+\end{tabular}
+\end{center}
+\noindent Held out for evaluation only: MedMCQA validation, MedQA test, PubMedQA labeled test.
+
+\chapter{Repository map}
+\begin{lstlisting}
+src/   config, model (RoPE/RMSNorm/SwiGLU), data loader, sources,
+       tokenizer_train, prepare_data, train (DDP+resume), sft, evaluate,
+       generate, rag_index
+modal_app/  app.py (all GPU functions + entrypoints), serve.py (live API + /rag)
+configs/    sweep.py, fleet.py, scale_1b.py, *.json experiment configs
+book/       this book (LaTeX + figures + real-data plots)
+site/       the Shopflo-styled live demo (chat + MCQ + RAG)
+\end{lstlisting}
+
+\vspace{1.2cm}
+\begin{center}
+\includegraphics[width=0.42\textwidth]{figures/fig_spark.png}\\[4mm]
+{\sffamily\bfseries\color{teal}\Large Now go build one.}\\[2mm]
+{\sffamily\color{slate} github.com/VizuaraAI/pharma-slm \quad\textbullet\quad pharma-slm-vizuara.vercel.app}
+\end{center}

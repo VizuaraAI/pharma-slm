@@ -1,0 +1,85 @@
+\part{Foundations}
+
+\chapter{Why build your own model}
+\chapfig{fig_spark.png}
+
+For most companies, ``using AI'' means calling someone else's API. That is the right default. So why would
+an enterprise ever train a language model \emph{from scratch}?
+
+There are four honest reasons, and they are the reasons this project exists.
+
+\section{Control, privacy, and provenance}
+A model you trained is a model you own. Every weight has a known origin; no data left your control; nothing
+about its behaviour is a black box you rent by the token. In regulated domains --- healthcare, finance, law
+--- ``we can show exactly what this model was trained on'' is not a nice-to-have, it is the difference
+between deployable and not.
+
+\section{A tokenizer that speaks your language}
+This is the subtle one, and it is the single capability you \emph{cannot} get by fine-tuning someone else's
+model. General tokenizers shatter domain words: \texttt{pharmacokinetics} or \texttt{indemnification} become
+five or six tokens, wasting the model's budget on spelling rather than meaning. When you train from scratch
+you build the vocabulary on day one. Ours reached a \textbf{fertility of 1.57} tokens per word on dense
+pharmaceutical text --- roughly half what an off-the-shelf tokenizer would use (Chapter~4).
+
+\section{Cost at inference scale}
+A small specialist that runs on a cheap GPU can be dramatically cheaper to serve than a frontier API once
+you are doing millions of calls --- and it never changes underneath you.
+
+\section{Understanding}
+You cannot truly debug, trust, or improve a system you did not build. The team that trains a model from
+scratch understands tokenization, attention, learning-rate schedules, and evaluation in a way no amount of
+prompt engineering will teach.
+
+\begin{numbers}[What ``from scratch'' bought us, concretely]
+A 350M model that writes fluent pharmaceutical prose; a custom 32k tokenizer; a fully transparent training
+recipe; and --- when we needed it --- the ability to swap the entire architecture and scale up, because we
+owned every line. Total compute for the whole journey: roughly \textbf{\$1{,}500} across twelve models.
+\end{numbers}
+
+\section{When \emph{not} to}
+Be honest: if your task is well served by an API, or you lack a large, clean domain corpus, or you need
+frontier-level reasoning, building from scratch is the wrong call. From scratch wins when you have abundant
+domain text, when the tokenizer matters, and when control and cost-at-scale dominate. Pharmaceuticals --- with
+PubMed's tens of billions of open words --- is a near-perfect fit, which is exactly why the best small
+biomedical models (BioGPT, PubMedBERT, BioMedLM) were all trained this way.
+
+\begin{lesson}
+Build from scratch when you have (a) a large clean domain corpus, (b) a real need for a custom tokenizer or
+full provenance, and (c) a task that plays to a small model's strengths. Otherwise, fine-tune or call an API.
+\end{lesson}
+
+\chapter{The recipe, end to end}
+\chapfig{fig_pipeline.png}
+
+A language model is six honest steps. The whole rest of this book is these six steps done carefully, plus
+the engineering and economics around them.
+
+\begin{enumerate}[leftmargin=2.2em]
+  \item \textbf{Gather data.} Blend a large general-English corpus with your domain text. Decide the mix.
+  \item \textbf{Train a tokenizer.} A custom byte-level BPE over the blended corpus.
+  \item \textbf{Define the model.} A modern decoder-only Transformer, written by hand.
+  \item \textbf{Pretrain.} Predict the next token, billions of times, across many GPUs.
+  \item \textbf{Instruction-tune (SFT).} Teach the raw next-token engine to \emph{answer}.
+  \item \textbf{Evaluate.} Grade it on real held-out tasks, and read its answers.
+\end{enumerate}
+
+\noindent Three ideas thread through all six and separate a toy from a real model:
+
+\subsection{Learn the domain \emph{and} the language}
+The famous medical models (Meditron, SaulLM) use 99\% domain text --- but those are \emph{continued}
+pretraining on a base that already speaks English. From scratch, you must teach English too, so we mix far
+more general text (Chapter~3). Getting this ratio right is the project's central data decision.
+
+\subsection{Over-train the small model}
+Chinchilla's ``20 tokens per parameter'' is a compute-optimal \emph{floor}, not a target. Every good small
+model today is trained far past it, because that is what turns ``grammatical'' into ``fluent.'' We trained a
+350M model on 20 billion tokens ($\approx$57$\times$).
+
+\subsection{Judge on tasks, not on loss}
+The most important lesson in the book, learned painfully in Chapter~7: the model with the \emph{lowest training
+loss} gave the \emph{worst answers}. Lower perplexity does not mean better. Always measure on the real task.
+
+\begin{lesson}
+The pipeline is simple; the judgement is not. The three decisions that matter most are the data mix, how long
+to train, and \emph{what you measure}. Get those right and the rest is engineering.
+\end{lesson}

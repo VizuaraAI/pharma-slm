@@ -1,0 +1,30 @@
+\chapter*{Preface}
+\addcontentsline{toc}{chapter}{Preface}
+\markboth{Preface}{Preface}
+
+\noindent Most explanations of how large language models work stop at the diagram. This book does the
+opposite: it is the unedited engineering log of \emph{actually building one}, from an empty folder to a
+model you can talk to on the web --- in a real, demanding domain (pharmaceuticals), under a real budget,
+on real cloud GPUs.
+
+\medskip
+\noindent We built two models from scratch: a \textbf{350-million-parameter} model and, when that one hit a
+wall, a \textbf{1.3-billion-parameter} one. We trained twelve models in parallel to choose the recipe, hit
+(and fixed) eight real bugs, watched a model get evicted from its GPUs and resume itself, ran out of budget
+mid-run, and finally bolted on retrieval so the model could cite its sources. Every figure, table, and
+number in these pages comes from those runs --- nothing is illustrative-only.
+
+\medskip
+\noindent This is written for the engineer or technical leader at an enterprise who is asking: \emph{should
+we build our own model, what does it actually take, what will it cost, and what will we get?} By the end you
+will have a concrete, reproducible playbook --- and an honest sense of where a small from-scratch model
+shines (fluent, grounded domain writing) and where it doesn't (hard multi-step reasoning, which is a function
+of scale, not effort).
+
+\begin{lesson}[How to read this book]
+Each chapter ends with the \textbf{lesson} we actually learned, often the hard way. Boxes marked
+\textcolor{purple}{\textbf{Gotcha}} are real failures and their fixes. The companion code, the live demo,
+and the full cost ledger are open at \texttt{github.com/VizuaraAI/pharma-slm}.
+\end{lesson}
+
+\cleardoublepage

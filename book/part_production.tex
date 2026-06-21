@@ -1,0 +1,101 @@
+\part{To production, and beyond}
+
+\chapter{Making it production-grade}
+\chapfig{fig_production.png}
+
+We have a model that writes well and, with retrieval, cites its sources. ``Production'' is the gap between
+that and something you would put in front of users. Here is the path, in return-on-investment order.
+
+\section{The highest-ROI moves, ranked}
+\begin{enumerate}[leftmargin=2.2em]
+  \item \textbf{Retrieval (RAG).} Done in Chapter~11. The biggest factual-accuracy win, cheapest, and it makes
+  the model trustworthy by showing sources. Do this first.
+  \item \textbf{Scale, if reasoning matters.} 1.3B $\rightarrow$ 2.7B lifts hard-exam accuracy toward 0.55. The
+  pipeline already supports it; it is a budget question, not an engineering one.
+  \item \textbf{Better post-training.} More and higher-quality instruction data, multi-turn conversations, and
+  --- importantly --- \emph{reasoning traces} distilled from a frontier model. Chain-of-thought in SFT lifts
+  even a small model's reasoning a few points.
+  \item \textbf{Preference tuning (DPO).} A cheap alignment pass after SFT for tone, format, and refusals.
+  \item \textbf{A real evaluation suite.} More benchmarks, hallucination rate, and an LLM-as-judge for
+  generation quality. You cannot improve what you cannot measure; build this early.
+  \item \textbf{Serving and safety.} Quantize for cheap fast inference; serve with batching; and add the
+  guardrails a medical product requires --- disclaimers, refusal on dangerous queries, source citations,
+  uncertainty.
+\end{enumerate}
+
+\section{The combination that ships}
+The pragmatic ``production'' configuration for most enterprises is not the biggest possible model. It is a
+\textbf{$\sim$1B model $+$ RAG $+$ good SFT/DPO $+$ citations $+$ guardrails}. That is a genuinely useful,
+trustworthy domain assistant --- without paying for 7B.
+
+\fig{figures/fig_future.png}{0.55}{The model you ship is the start, not the end. Each of these levers
+compounds; retrieval and a real eval suite are the ones to add first.}
+
+\begin{lesson}
+``Production'' is mostly retrieval, evaluation, and safety --- not raw scale. Add grounding and a measurement
+harness before you spend on a bigger model.
+\end{lesson}
+
+\chapter{The enterprise playbook}
+\chapfig{fig_roadmap.png}
+
+Everything in this book, generalized into the roadmap we would hand another team.
+
+\section{The eight steps}
+\begin{enumerate}[leftmargin=2.2em]
+  \item \textbf{Decide scope and budget.} Pick the task first --- it sets the size. Generation? A small model
+  is fine. Reasoning? You need 1B$+$. Then choose from-scratch (control $+$ custom tokenizer) vs.\ continued
+  pretraining (faster, data-light).
+  \item \textbf{Gather data $+$ a custom tokenizer.} Mind the domain-data ceiling. Train the BPE; it is free
+  from scratch.
+  \item \textbf{Build the spine, then smoke-test tiny.} A \$2 end-to-end run catches the expensive bugs.
+  \item \textbf{Ablate in parallel, cheaply.} Learning rate, then mix, then architecture. Self-abandon the
+  losers. \emph{Judge on the task, not the loss.}
+  \item \textbf{Run a production fleet.} A few full models varying your biggest unknown; pick the winner by
+  evaluation; watch for overfitting.
+  \item \textbf{Scale the winner and train it long.} Over-train past Chinchilla; resume-capable; expand data
+  if the corpus is thin.
+  \item \textbf{Instruction-tune.} Knowledge from pretraining, behaviour from SFT.
+  \item \textbf{Evaluate, deploy, and add retrieval.} Grade on held-out tasks, ship a live endpoint, and add
+  RAG for grounded, cited answers.
+\end{enumerate}
+
+\section{The golden rules}
+\begin{center}\small
+\begin{tabular}{@{}p{0.46\textwidth}p{0.46\textwidth}@{}}
+\toprule
+\textbf{Rule} & \textbf{Why}\\
+\midrule
+Judge on tasks, not loss & Our lowest-loss model gave the worst answers.\\
+Match size to the task & 350M writes well, can't reason through exams.\\
+Over-train small models & Past Chinchilla is what makes them fluent.\\
+Experiment in parallel, kill losers & A week of tuning becomes an afternoon.\\
+Make long jobs durable & Detach, checkpoint, resume --- GPUs get reclaimed.\\
+Smoke-test before you spend & A \$2 run catches \$200 bugs.\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{What each scale buys you}
+\begin{center}\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Size} & \textbf{Train cost} & \textbf{MedMCQA} & \textbf{What you get}\\
+\midrule
+350M (this project) & \$0.4--0.7k & $\sim$0.29 & fluent writer / explainer\\
+1.3B (this project) & $\sim$\$0.9k & 0.32 & sharper facts, some reasoning\\
+2.7B & \$8--15k & $\sim$0.50--0.57 & real domain assistant\\
+7B $+$ RLHF $+$ RAG & \$30--80k & $\sim$0.60--0.70 & deployable expert\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\fig{figures/fig_enterprise.png}{0.55}{The destination: a domain intelligence the enterprise owns end-to-end ---
+transparent, controllable, and improvable, with a clear path up the scaling ladder.}
+
+\begin{lesson}[The whole book in one paragraph]
+Building a domain LLM from scratch is six honest steps wrapped in good judgement and durable engineering. The
+decisions that matter are the data mix, how long you train, and \emph{what you measure}. A 350M model gets you
+a fluent, grounded domain writer for the price of a laptop; scale and retrieval take you the rest of the way.
+It is more achievable, and more affordable, than it looks.
+\end{lesson}

@@ -1,0 +1,89 @@
+\part{Going further}
+
+\chapter{Scaling up: 350M to 1.3B}
+\chapfig{fig_scaling.png}
+
+Chapter~9 ended with a wall: the 350M model was capacity-bound on reasoning. The book's central prediction was
+that \emph{scale} --- not more data or more training --- is the lever that moves it. So we tested the
+prediction directly.
+
+\section{Building a bigger model is two numbers}
+We doubled the width (dimension 1024 $\rightarrow$ 2048), keeping 24 layers, giving \textbf{1.30 billion
+parameters}. Same code, same data pipeline, same tokenizer. This is the payoff of having built everything
+ourselves.
+
+\section{Re-tuning for the new size}
+A learning rate that is right for 350M is usually too high for 1.3B. Rather than guess, we ran a quick
+three-model learning-rate ablation \emph{at the new scale} --- and indeed \texttt{1e-3} was now too hot;
+\textbf{5e-4} won. This is the playbook applied to itself: a \$40 ablation before a \$880 run.
+
+\section{The result}
+\fig{plots/plot_scaling.pdf}{0.82}{The capacity lever, tested. At 350M, MedMCQA was stuck near chance no matter
+what we did. At 1.3B it \emph{moved} --- the metric that data and training could not budge responded to scale,
+exactly as predicted.}
+
+\begin{center}\small
+\begin{tabular}{@{}lccl@{}}
+\toprule
+\textbf{Metric} & \textbf{350M} & \textbf{1.3B} & \textbf{Read}\\
+\midrule
+MedMCQA (chance 0.25) & 0.290 & \textbf{0.321} & cleared chance --- scale moved it\\
+PubMedQA & 0.608 & \textbf{0.654} & $+4.6$ points\\
+PubMed val-loss $\downarrow$ & 2.27 & \textbf{2.12} & better\\
+PMC val-loss $\downarrow$ & 2.13 & \textbf{1.97} & better\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{The generation jump is bigger than the table}
+On \emph{``mechanism of action of metformin''}:
+\begin{quote}\small
+\textbf{350M:} ``Metformin is a \emph{glycoside antibiotic} similar to erythromycin\ldots'' --- fluent but
+flatly wrong.\\[3pt]
+\textbf{1.3B:} ``1. Insulin sensitization. 2. Decreased hepatic glucose production. 3. Decreased glucose
+absorption\ldots'' --- a correct, structured mechanism.
+\end{quote}
+
+\begin{lesson}
+Scale is the lever for reasoning. It moved the exam score that nothing else could --- but MedMCQA at 0.32 is
+still modest: the wall \emph{lifts}, it does not vanish. For board-exam accuracy you keep climbing
+(2.7B$+$). And the cheapest reliability win isn't scale at all --- it is retrieval (next chapter).
+\end{lesson}
+
+\begin{gotcha}[The bigger model ran out of memory]
+The first 1.3B run crashed instantly with a CUDA out-of-memory error. The culprit was the logits tensor ---
+\texttt{(batch, sequence, 32000)} --- which at sequence length 2048 is enormous, on top of the larger optimizer
+state. The fix: a much smaller micro-batch with more gradient accumulation (same effective batch), plus
+expandable memory segments. Big models need small micro-batches.
+\end{gotcha}
+
+\chapter{Retrieval: answers it can cite}
+\chapfig{fig_rag.png}
+
+A small model's worst habit is confident wrongness. The fix is not always a bigger model. Often it is
+\textbf{retrieval}: instead of trusting the model's memory, fetch real source passages at question time and
+have the model answer \emph{grounded in them}.
+
+\section{What we built}
+We indexed \textbf{300{,}000 PubMed passages} with a biomedical embedding model (PubMedBERT) into a FAISS
+vector index. At query time we embed the question, retrieve the most similar passages, and prompt the 1.3B
+model to answer using them --- returning the sources so a human can verify.
+
+\fig{figures/fig_grounding.png}{0.55}{Every answer is now tethered to evidence. The model's response is
+anchored to the retrieved passages, and those passages are shown with similarity scores.}
+
+\section{It works --- with an honest caveat}
+On \emph{``the role of AMPK in the antidiabetic action of metformin,''} retrieval pulled the right paper and
+the model answered correctly and \emph{cited it}. But on a vaguer query (``mechanism of metformin'') retrieval
+pulled tangential metformin-\emph{cancer} papers and the answer drifted. Retrieval quality matters.
+
+\begin{numbers}[Why RAG is the highest-ROI next step]
+It adds factual grounding and citations --- the thing enterprises actually need for trust --- for a few hundred
+dollars, no model retraining, and it gets \emph{better} as the model gets better at reading. A 1.3B model
+$+$ RAG beats a 7B model alone on factual reliability, at a fraction of the cost.
+\end{numbers}
+
+\begin{lesson}
+When facts matter more than your budget can scale to, reach for retrieval before more parameters. Grounding
+$+$ citations is the cheapest, highest-trust reliability layer for a domain assistant.
+\end{lesson}

@@ -8,3 +8,6 @@ __pycache__/
 .vercel/
 node_modules/
 .ipynb_checkpoints/
+book/tectonic
+book/main.aux
+book/main.toc

@@ -1,0 +1,119 @@
+\part{Engineering and economics}
+
+\chapter{Infrastructure: GPUs in the cloud}
+\chapfig{fig_infra.png}
+
+You do not need to own GPUs to train a model from scratch. We ran the entire project on
+\textbf{Modal}, a serverless GPU platform, renting H100s by the second.
+
+\section{What ran on what}
+\begin{center}\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Stage} & \textbf{Hardware} & \textbf{Parallelism}\\
+\midrule
+Data prep \& tokenizer & CPU (8-core) & $\sim$24 containers at once\\
+Ablation sweep & 1$\times$H100 each & 7 in parallel\\
+Production fleet & 4$\times$H100 each & 16 H100s at once\\
+Winner (350M, 20B tok) & 8$\times$H100 & DDP\\
+Scale-up (1.3B, 30B tok) & 8$\times$H100 & DDP\\
+RAG index \& serving & 1$\times$H100 / L4 & ---\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Two non-obvious operational lessons}
+\begin{gotcha}[Detach, or your laptop kills the run]
+Our first long run died overnight because it was tied to the laptop that launched it --- when the machine
+slept, the job was killed. Every long job after that was \emph{detached}: it runs on the cloud, fully
+decoupled from the client, and survives disconnects, sleep, and shutdown.
+\end{gotcha}
+
+\fig{figures/fig_resume.png}{0.5}{The 1.3B run was evicted from its GPUs repeatedly near the end. Because every
+run checkpoints and \emph{resumes from the last checkpoint}, each eviction cost minutes, not the whole run.}
+
+\begin{gotcha}[Make every run resumable]
+Cloud GPUs get preempted. Worse, a naive auto-retry once \emph{overwrote a good checkpoint by restarting from
+scratch} and we lost a model. The fix: save often, and on restart resume from the latest checkpoint rather
+than reinitializing. The 1.3B run was preempted several times in its final hours and finished anyway.
+\end{gotcha}
+
+\begin{lesson}
+Treat infrastructure as adversarial: assume the client disconnects and the GPUs get reclaimed. Detached jobs
+$+$ frequent checkpoints $+$ resume-on-restart turn those from disasters into footnotes.
+\end{lesson}
+
+\chapter{What it cost}
+\chapfig{fig_budget.png}
+
+Here is the complete, honest ledger. These are estimates computed as GPU-hours $\times$ rate (H100
+$\approx$\$3.95/hr, L4 $\approx$\$0.80/hr); the exact billed figure lives on the cloud dashboard.
+
+\begin{center}\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+\textbf{Phase} & \textbf{GPU-hours} & \textbf{Cost}\\
+\midrule
+Smoke tests ($\times$3) & 0.5 & \$2\\
+Tokenizer & --- & \$1\\
+Data prep (parallel) & --- & \$5\\
+Ablation sweep (7 runs) & 3.6 & \$14\\
+Production fleet (4 runs) & $\sim$40 & $\sim$\$158\\
+350M winner (20\,B tokens) & $\sim$51 & $\sim$\$202\\
+SFT $+$ eval & $\sim$6 & $\sim$\$24\\
+1.3B scale-up (30\,B tokens) & $\sim$200 & $\sim$\$880\\
+RAG index $+$ serving & small & $\sim$\$30\\
+\midrule
+\textbf{Total} & $\sim$\textbf{350+} & $\approx$\textbf{\$1{,}500}\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{The scaling ladder}
+\fig{plots/plot_costladder.pdf}{0.82}{Cost versus capability. The 350M model is a fluent writer for the price
+of a nice dinner; each step up the ladder buys reasoning at a steeply rising price. Estimates extrapolated
+from published biomedical models and our own runs.}
+
+\begin{gotcha}[We hit the spend limit mid-run]
+The 1.3B run pushed us past the original \$1{,}000 budget, and the cloud workspace enforced its spend limit ---
+which is also why it kept getting preempted. The model was 93\% trained with its best checkpoint safely saved;
+raising the limit let us finish the cheap finalization. A spend limit is a feature: it is the system telling
+you honestly that you are over budget.
+\end{gotcha}
+
+\begin{lesson}
+A complete from-scratch domain model --- two model sizes, twelve experiments, RAG, a live demo --- cost about
+\textbf{\$1{,}500}. Budget by GPU-hours $\times$ rate, set a hard spend limit, and remember that the cheap
+phases (data, tokenizer, ablations) are where the \emph{decisions} are made; the money is in the long runs.
+\end{lesson}
+
+\chapter{Eight bugs we actually hit}
+\chapfig{fig_bugs.png}
+
+A from-scratch project is, mostly, a sequence of bugs. These are the real ones, because the non-obvious
+failures are the part no tutorial shows you.
+
+\begin{enumerate}[leftmargin=2.2em]
+  \item \textbf{Silent config drop.} A config field the trainer needed wasn't declared, so it was silently
+  ignored. \emph{Fix: declare it; warn on unknown keys.}
+  \item \textbf{Empty-file crash from a stale mount.} A reused cloud container held an out-of-date view of the
+  shared volume, so a finalize step saw zero files. \emph{Fix: reload the volume before reading; guard empty
+  files.}
+  \item \textbf{Live metrics never appeared.} The training subprocess couldn't import the client library to
+  write metrics. \emph{Fix: add it to the image.}
+  \item \textbf{A local import shadowed a global.} An \texttt{import torch.\_dynamo} inside a function made
+  \texttt{torch} a local variable for the whole function, crashing on first use. \emph{Fix: import at module
+  level.}
+  \item \textbf{\texttt{.view()} on a non-contiguous tensor.} Worked in training, crashed in SFT.
+  \emph{Fix: use \texttt{.reshape()}.}
+  \item \textbf{Laptop sleep killed a non-detached run.} \emph{Fix: detach (Chapter~12).}
+  \item \textbf{Auto-retry overwrote a checkpoint.} \emph{Fix: resume, don't restart (Chapter~12).}
+  \item \textbf{Out-of-memory at 1.3B.} The logits tensor plus optimizer state overflowed the GPU.
+  \emph{Fix: small micro-batch $+$ grad accumulation (Chapter~10).}
+\end{enumerate}
+
+\begin{lesson}
+Smoke-test the entire pipeline at tiny scale \emph{before} spending. A \$2 run on a toy model caught four of
+these bugs that would otherwise have surfaced in a \$200 one. Cheap, fast, end-to-end smoke tests are the best
+money you will spend.
+\end{lesson}

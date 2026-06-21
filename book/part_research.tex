@@ -1,0 +1,115 @@
+\part{The research process}
+
+\chapter{Experiments, like a research team}
+\chapfig{fig_research_team.png}
+
+A single person tuning one model at a time is slow and biased. We instead ran experiments the way a research
+lab does: \textbf{many models in parallel, each cheap, the losers killed early, the winner promoted.}
+
+\section{Round one: the ablation sweep}
+\fig{plots/plot_ablation.pdf}{0.82}{Seven short models trained at once (one GPU each, $\sim$0.35\,B tokens),
+ranked by PubMed validation loss at a matched step. Learning rate \texttt{1e-3} edged out the field;
+\texttt{3e-4} was clearly the laggard; grouped-query attention was essentially free.}
+
+\noindent Seven models, varying learning rate, data mix, and one architecture choice (grouped-query
+attention), all running simultaneously, each self-abandoning if it stalled. The finding: a learning rate of
+\textbf{1e-3} --- higher than the textbook default --- and that GQA costs nothing, so we could keep it for
+faster inference. Total cost of the round: about \textbf{\$15}.
+
+\section{Round two: the production fleet}
+\fig{plots/plot_fleet.pdf}{0.82}{Four full models trained in parallel (sixteen H100s at once), each a different
+general/domain mix, judged on the \emph{downstream} task. More domain text lowers domain loss but raises
+general loss --- a clean tradeoff with a sweet spot at 45--60\% domain.}
+
+\noindent Then the big question: how much domain text? We trained four full models at once, varying only the
+mix (30, 45, 60, 75\% domain), and judged them on real pharmaceutical question-answering.
+
+\section{The most important finding in the book}
+\fig{figures/fig_overfitting.png}{0.55}{The 75\%-domain model memorized the \emph{style} of medical papers
+without learning to answer. Lowest loss, worst answers.}
+
+\noindent The model trained on \textbf{75\% domain} achieved the \emph{best} training loss --- and the
+\emph{worst} downstream accuracy. It had over-repeated the thin domain corpus and memorized the surface form
+of PubMed abstracts without learning to reason. The balanced models won.
+
+\begin{lesson}[The lesson, in five words]
+\textbf{Lower perplexity is not better.} A model's training loss measures how well it predicts text, not how
+useful its answers are. Always rank candidates on the real downstream task. We would have shipped the wrong
+model if we had trusted loss alone.
+\end{lesson}
+
+\section{Why parallel-and-abandon matters}
+\fig{figures/fig_ablation.png}{0.5}{Keep the experiments that learn; let the rest fade. Self-abandonment turns
+a week of sequential tuning into an afternoon.}
+
+\noindent Running eleven models to choose a recipe sounds expensive. It was not --- the ablation round was
+\$15 and the fleet a few hundred dollars --- because the runs are short and the bad ones die early. Tuning one
+model at a time would have been slower \emph{and} worse.
+
+\chapter{Instruction tuning (SFT)}
+\chapfig{fig_sft.png}
+
+A freshly pretrained model only \emph{continues text}. Ask it a question and it rambles, or asks you a
+question back. Supervised fine-tuning (SFT) is the cheap, dramatic step that turns it into something that
+\emph{answers}.
+
+\section{How it works}
+We format each example with a chat template and --- the single most important detail --- \textbf{mask the loss
+to the response tokens only}. The model is never trained to predict the user's question, only the answer.
+
+\begin{lstlisting}
+# template:  <|user|>\n{question}<|assistant|>\n{answer}<|endoftext|>
+# labels:    [ -1 on the prompt ............ ][ real targets on answer ]
+\end{lstlisting}
+
+\noindent Our SFT set was 70{,}000 examples --- medical exam questions with explanations, PubMed-style QA, and
+a slice of general instructions so the model stays a generalist.
+
+\section{The before/after}
+This is the clearest ``aha'' in the whole project. The same model, on \emph{``What are the side effects of
+ibuprofen?''}:
+
+\begin{quote}\small
+\textbf{Before SFT (base):} continues into a rambling paragraph that drifts off topic.\\[3pt]
+\textbf{After SFT:} ``The common side effects of ibuprofen include: \textbullet\ Headache \textbullet\ Joint
+pain \textbullet\ Fever \ldots'' --- a clean, formatted clinical answer.
+\end{quote}
+
+\noindent Across our models SFT improved \emph{every} metric, and lifted PubMedQA the most (e.g.\ 0.53
+$\rightarrow$ 0.61 on the first model).
+
+\begin{lesson}
+Pretraining gives the model \emph{knowledge}; SFT gives it \emph{behaviour}. It is cheap (tens of dollars),
+fast, and the most visible single transformation in the pipeline. Mask the loss to the response.
+\end{lesson}
+
+\chapter{Evaluation, and the capacity wall}
+\chapfig{fig_eval.png}
+
+You cannot improve what you cannot measure. We evaluate with \textbf{answer-likelihood}: for a multiple-choice
+question, score each option by the model's length-normalized probability and pick the most likely. This needs
+no extra training, so we can track real knowledge throughout.
+
+\section{The numbers, and what they mean}
+On the 350M model after SFT: MedMCQA $\approx$0.29 (chance is 0.25), PubMedQA $\approx$0.61. The MedMCQA result
+is the one to sit with.
+
+\fig{figures/fig_capacity.png}{0.5}{A 350M model is simply too small to do the multi-step reasoning hard exam
+questions demand. More data and more training did not move the score --- it is bounded by capacity.}
+
+\section{``Capacity-bound,'' in plain English}
+We \emph{proved} this is a size limit, not a training limit: training five times longer on three times more
+data did \textbf{not} raise the MedMCQA score above chance. The bottleneck is the model's size --- its
+``brain,'' not its ``study time.'' Yet the same model writes genuinely good, mostly-accurate pharmaceutical
+prose, because fluent generation needs far less reasoning capacity than acing trick multiple-choice questions.
+
+\begin{numbers}[The honest scorecard at 350M]
+Fluent domain writer: \textbf{yes}. Reliable on open factual questions: \textbf{mostly}. Passes hard medical
+exams: \textbf{no} --- that needs scale (Chapter~10) or retrieval (Chapter~11).
+\end{numbers}
+
+\begin{lesson}
+Match the model size to the \emph{task}. Generation and understanding are cheap; multi-step reasoning is
+expensive and scales with parameters. Pick benchmarks and capstones that play to a small model's strengths, or
+you will mistake a capacity limit for a failure.
+\end{lesson}

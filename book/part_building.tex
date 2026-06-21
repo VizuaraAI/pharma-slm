@@ -1,0 +1,168 @@
+\part{Building the model}
+
+\chapter{Data: the real bottleneck}
+\chapfig{fig_data.png}
+
+Everyone talks about architecture. In practice, \textbf{data is where a domain model is won or lost.} This
+chapter is the data decisions we actually made, including the one that nearly capped the whole project.
+
+\section{Two buckets: general and domain}
+We assembled roughly \textbf{13 billion tokens} from open sources, in two buckets.
+
+\begin{center}\small
+\begin{tabular}{@{}lll r@{}}
+\toprule
+\textbf{Source} & \textbf{Role} & \textbf{License} & \textbf{Tokens}\\
+\midrule
+FineWeb-Edu (sample) & general English & ODC-BY & 10.09\,B\\
+PubMed Central full-text & domain & PMC commercial & 1.34\,B\\
+PubMed abstracts & domain & NLM & 1.01\,B\\
+MedRAG / PubMed & domain & open & 0.45\,B\\
+Clinical guidelines & domain & open & 0.10\,B\\
+Medical textbooks & domain & open & 0.02\,B\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{The mix is the central decision}
+\fig{figures/fig_mixing.png}{0.6}{General and domain text are blended, not concatenated. The ratio is the
+single most important data knob --- and we measured it rather than guessing (Chapter~7).}
+
+\noindent Too little domain text and the model never learns the field; too much and it overfits and forgets
+how to write. We \emph{measured} the sweet spot with a four-model fleet (Chapter~7) and it landed at roughly
+\textbf{45--60\% domain}. The famous 99\%-domain recipes do not apply here --- they assume a base model that
+already speaks English.
+
+\section{The domain-data ceiling}
+\fig{figures/fig_data_ceiling.png}{0.55}{Our usable PubMed corpus was only $\sim$1\,B unique tokens at first.
+General text is effectively unlimited; domain text is not.}
+
+\noindent Here is the hard part. General English is effectively infinite. \emph{Domain} text is not. Our
+first clean PubMed pull was only about \textbf{1 billion unique tokens}. For a small model trained on tens of
+billions of tokens, that means the domain corpus \emph{repeats} many times --- and repetition is exactly what
+causes the overfitting we will see in Chapter~7. We later expanded the domain corpus to $\sim$2.9\,B by adding
+PMC full-text and MedRAG, which is what made the bigger 1.3B model trainable without overfitting.
+
+\section{Engineering: tokenize in parallel}
+Tokenizing 13\,B tokens through a single stream is impossibly slow. We fan the work across $\sim$24 cloud
+containers, each handling a slice of the source's parquet files, writing flat \texttt{uint16} token files to a
+shared volume. The data loader then samples sources by weight \emph{at batch time}, which means the mix ratio
+is a runtime knob --- changing it costs nothing and requires no re-tokenization.
+
+\begin{lesson}
+Domain data, not general data, is your ceiling. Plan for it: measure how many \emph{unique} domain tokens you
+have, and remember that training tokens $\div$ unique tokens $=$ epochs. Above $\sim$4 epochs on a thin
+corpus, overfitting starts.
+\end{lesson}
+
+\chapter{The tokenizer}
+\chapfig{fig_tokenizer.png}
+
+The tokenizer is the model's alphabet. It is also the one thing you can only build when training from
+scratch, so it is worth doing well.
+
+\section{What we built}
+A \textbf{32{,}000-token byte-level BPE}, trained on a blend of general and pharmaceutical text, with special
+tokens reserved up front for the chat format (\texttt{<|user|>}, \texttt{<|assistant|>}, \texttt{<|endoftext|>})
+so we never have to resize embeddings later.
+
+\section{Why it matters: fertility}
+``Fertility'' is tokens per word. Lower is better: fewer tokens per document means more meaning fits in the
+context window and less compute is spent per document. On a dense test sentence ---
+\emph{``Pharmacokinetics of acetaminophen: hepatic glucuronidation and cytochrome P450-mediated
+metabolism''} --- ours produced \textbf{1.57 tokens per word}. A general tokenizer would fragment
+\texttt{pharmacokinetics}, \texttt{glucuronidation}, and \texttt{cytochrome} into many pieces each.
+
+\begin{numbers}[The tokenizer in one line]
+32k vocabulary $\cdot$ byte-level BPE $\cdot$ trained on the blended corpus $\cdot$ fertility 1.57 on pharma
+text $\cdot$ five reserved special tokens.
+\end{numbers}
+
+\begin{gotcha}[Training the tokenizer can quietly hang]
+Our first tokenizer build ran for an hour with no output. The cause: feeding huge, untruncated web documents
+into the BPE trainer with the progress bar on flooded the logs and ballooned memory. The fix: truncate each
+document to a few thousand characters and disable the progress bar. A 32k vocabulary needs only a few hundred
+MB of representative text, not the whole corpus.
+\end{gotcha}
+
+\begin{lesson}
+A custom tokenizer is nearly free when you train from scratch and gives a guaranteed efficiency win. Don't
+over-claim accuracy gains from it --- the literature is mixed --- but do capture the fertility win, and reserve
+your chat special tokens before pretraining.
+\end{lesson}
+
+\chapter{The model architecture}
+\chapfig{fig_architecture.png}
+
+We wrote the model by hand --- a modern decoder-only Transformer, deliberately readable. ``Modern'' here means
+the handful of upgrades over the original GPT-2 block that the field has settled on.
+
+\section{The components}
+\begin{center}\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Component} & \textbf{Choice (and why)}\\
+\midrule
+Positional encoding & \textbf{RoPE} --- rotary; generalizes better than learned positions\\
+Normalization & \textbf{RMSNorm}, pre-norm --- simpler and more stable\\
+Feed-forward & \textbf{SwiGLU} --- a gated activation, better than plain GELU\\
+Attention & \textbf{FlashAttention} (scaled-dot-product) --- fast and memory-efficient\\
+Embeddings & weight-tied input/output --- saves parameters\\
+Precision & bf16 with \texttt{torch.compile}\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Sizing the model}
+Parameters come almost entirely from the layers. For our 350M model: dimension 1024, 24 layers, 16 heads. Each
+layer contributes about 12.6M parameters (attention $+$ SwiGLU MLP), times 24, plus the 32.8M embedding
+matrix, gives $\approx$341M. To build the 1.3B model in Chapter~10 we simply doubled the width to 2048,
+giving $\approx$1.30B --- the same code, two numbers changed.
+
+\begin{lstlisting}
+class Block(nn.Module):           # one Transformer layer, in full
+    def forward(self, x, cos, sin):
+        x = x + self.attn(self.attn_norm(x), cos, sin)   # RoPE inside attn
+        x = x + self.ffn(self.ffn_norm(x))               # SwiGLU MLP
+        return x
+\end{lstlisting}
+
+\begin{lesson}
+You do not need a novel architecture. The standard modern decoder block (RoPE $+$ RMSNorm $+$ SwiGLU $+$
+Flash) is excellent and scales cleanly --- the whole jump from 350M to 1.3B was two config numbers.
+\end{lesson}
+
+\chapter{Pretraining}
+\chapfig{fig_pretraining.png}
+
+Pretraining is one idea repeated billions of times: predict the next token, measure how wrong you were, nudge
+the weights. Do it long enough, on enough text, and fluency emerges.
+
+\section{The signature of training from scratch}
+\fig{plots/plot_losscurve.pdf}{0.82}{The real descent. A model over a 32k vocabulary starts at a loss of
+$\ln(32000)=10.37$ --- the score of pure guessing. Ours began at 10.6 (random initialization) and we drove it
+down past 2.3. \emph{Starting at the loss of noise is the proof a model was trained from scratch}; a borrowed
+pretrained model would start near 2--3.}
+
+\section{The mechanics}
+We train with distributed data-parallel (DDP) across 8 GPUs, a cosine learning-rate schedule with warmup,
+gradient accumulation for a large effective batch, and bf16. Two engineering features earned their keep
+repeatedly:
+
+\begin{itemize}
+  \item \textbf{Per-source validation loss.} We track loss on each data source separately, so we can compare
+  the \emph{domain} loss across runs with different mixes --- a mix-agnostic signal. This is what let us judge
+  the fleet fairly in Chapter~7.
+  \item \textbf{Self-abandonment.} A run that diverges (NaN), stalls above a ceiling, or plateaus kills itself,
+  so a bad experiment never wastes a full GPU-day.
+\end{itemize}
+
+\section{Over-training, concretely}
+Chinchilla-optimal for 350M is $\sim$7\,B tokens. We trained the production model on \textbf{20\,B} ($\approx$
+57$\times$ parameters). That extra training is precisely what moved it from grammatical to genuinely fluent ---
+and it cost about \$200 on eight H100s.
+
+\begin{lesson}
+Watch the loss start at $\ln(\text{vocab})$ --- that is your proof of a true from-scratch run --- and then
+over-train well past Chinchilla. For small models, more tokens is the cheapest quality you can buy.
+\end{lesson}
