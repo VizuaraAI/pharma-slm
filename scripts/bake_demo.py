@@ -35,6 +35,13 @@ MCQ = [
 ]
 
 
+RAG_Q = [
+    "What is the role of AMPK in the antidiabetic action of metformin?",
+    "What are the cardiovascular effects of statins beyond lowering cholesterol?",
+    "How does aspirin reduce the risk of colorectal cancer?",
+]
+
+
 def main():
     print("baking chat...")
     chat = []
@@ -42,6 +49,15 @@ def main():
         a = post("/generate", {"prompt": p, "max_new_tokens": 110, "temperature": 0.6})["answer"]
         chat.append({"q": p, "a": a})
         print("  ✓", p)
+    print("baking rag...")
+    rag = []
+    for p in RAG_Q:
+        try:
+            d = post("/rag", {"question": p, "k": 3})
+            rag.append({"q": p, "a": d.get("answer", ""), "sources": d.get("sources", [])})
+            print("  ✓ rag", p[:45])
+        except Exception as e:
+            print("  rag err", e)
     print("baking mcq...")
     mcq = []
     for m in MCQ:
@@ -49,9 +65,9 @@ def main():
         mcq.append({**m, **r})
         print(f"  ✓ pred={r['pred']} correct={r['correct']}  {m['question'][:50]}")
     os.makedirs("site", exist_ok=True)
-    json.dump({"chat": chat, "mcq": mcq}, open("site/demo_data.json", "w"), indent=2)
+    json.dump({"chat": chat, "mcq": mcq, "rag": rag}, open("site/demo_data.json", "w"), indent=2)
     n_right = sum(x["correct"] for x in mcq)
-    print(f"wrote site/demo_data.json  | mcq right: {n_right}/{len(mcq)}")
+    print(f"wrote site/demo_data.json  | mcq right: {n_right}/{len(mcq)} | rag: {len(rag)}")
 
 
 if __name__ == "__main__":

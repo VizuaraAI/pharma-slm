@@ -2,27 +2,27 @@
   "chat": [
     {
       "q": "What is the mechanism of action of metformin?",
-      "a": "Metformin is a medication that is used to treat type 2 diabetes. It works by increasing the production of insulin and lowering the levels of glucose in the blood. It works by inhibiting the enzyme acetyl CoA carboxylase, which breaks down the fat in the body, causing the liver to produce more insulin. This helps to suppress the production of glucose and keep the blood sugar levels within a normal range.\n\nMetformin can cause several side effects, including weight gain, fatigue, and loss of appetite. These side effects can be treated with lifestyle changes"
+      "a": "Metformin is an antidiabetic drug used to treat type 2 diabetes. It is an insulin secretagogue, meaning that it acts by increasing the sensitivity of the glucose sensor in the pancreas to insulin. Metformin increases the sensitivity of the cells in the pancreas to insulin, which helps to lower blood glucose levels.\n\nIn addition to its effects on the pancreas, metformin can also be absorbed into the blood and travel to the liver. Here, it is metabolized by the liver to release its active metabolite, metformin-sulindac (MSD"
     },
     {
       "q": "What are the common side effects of warfarin?",
-      "a": "The common side effects of warfarin are nausea, vomiting, and anemia. These side effects can be very serious and can lead to death. warfarin can also affect the liver, increasing the risk of bleeding. It is important to discuss the side effects of warfarin with your healthcare provider to determine the best course of treatment."
+      "a": "Side effects of warfarin can vary depending on the individual and the dose taken. Here are some common side effects that may occur:\n\n1. Nausea and vomiting: This is one of the most common side effects. It can be caused by the medicine's structure and the way it is absorbed by the body.\n\n2. GIT side effects: This can include nausea, vomiting, diarrhea, and abdominal pain.\n\n3. Hypeension: warfarin can cause blood vessels to narrow, leading to high blood pressure."
     },
     {
       "q": "What is amoxicillin used to treat?",
-      "a": "Amoxicillin is used to treat a range of bacterial infections caused by bacteria such as:\n\n- Bacterial infections caused by Clostridium difficile (colonization with this strain of bacteria can lead to diarrhea and even death)\n- Bacterial infections caused by Staphylococcus aureus, such as staph infections (staph aureus is a type of Staphylococcus)\n- Bacterial infections caused by Enterococcus faecalis (E. faecalis is a type of Enterococcus)\n- Bacterial infections caused by Staphylococcus aureus, such as methicillin-resistant"
+      "a": "Amoxicillin, also known by the brand name XYLITIN, is a bacterial antibiotic used to treat a wide range of infections caused by bacteria, such as pneumonia, urinary tract infections, and sinus infections. It is also used to treat upper respiratory tract infections caused by viruses. Additionally, amoxicillin is also used to treat infections caused by penicillin-resistant strains of bacteria, such as Streptococcus pneumoniae and certain types of Haemophilus influenzae. It is also used to treat infections caused by gram-negative bacteria, such as E. coli and Kle"
     },
     {
       "q": "What is the mechanism of action of aspirin?",
-      "a": "Aspirin acts as an anti-inflammatory drug by inhibiting the synthesis of prostaglandin (PG) E2, which is a main factor responsible for the inflammatory response. It is also an anti-platelet agent that prevents platelet aggregation, thereby reducing the risk of blood clots. In addition, aspirin can reduce the risk of developing cancers such as stomach, lung, esophagus, and bladder. It can also help to reduce the risk of thrombosis by reducing the formation of blood clots in the legs and arms."
+      "a": "Aspirin is an analgesic, anti-inflammatory, and fever- reducing drug that is used to treat a variety of conditions, including pain, inflammation, and fever. Aspirin acts by inhibiting the enzyme cyclooxygenase, which is an enzyme that produces prostaglandins and other inflammatory mediators. This inhibition results in reduced inflammation and pain, and the ability to reduce fever.\n\nAspirin is usually taken by mouth, but can also be given intravenously or applied to the skin. The mechanism by which aspirin reduces pain and inflammation is not fully understood, but"
     },
     {
       "q": "What is ibuprofen used for?",
-      "a": "Ibuprofen is a medication used for the treatment of acute and chronic pain. It works by inhibiting the production of prostaglandins, which are a type of inflammation-causing hormone. This can be used as an analgesic, to help reduce pain and inflammation, and to reduce the risk of further injuries. It is a great alternative to other painkillers, such as paracetamol or NSAIDs, as it is a safe and effective way to manage pain. It can also be used as an adjuvant to other pain relievers, such as acetaminophen or NSAIDs."
+      "a": "Ibuprofen is a medication used to treat pain, fever, and inflammation. It is available by prescription under the brand name Nurofen and by prescription under the brand nameolofen. It is typically used in the following cases:\n\n1. back pain\n2. postoperative pain\n3. arthritis\n4. headache\n5. pain after surgery\n6. pain in children\n7. pain associated with labor and delivery\n8. pain associated with metastatic cancer\n9. pain associated with osteoarthritis\n10. pain associated with"
     },
     {
       "q": "What is hypertension and how is it treated?",
-      "a": "Hypertension is a condition where the blood vessels in your body are over-react to the pressure of blood being carried through them. This can cause a variety of symptoms, including high blood pressure, which can lead to various health problems.\n\nOne of the most common types of hypertension is essential hypertension, which is defined as the condition where the blood vessels in the body are over-responding to the pressure in the bloodstream. This can be caused by a variety of factors, including lifestyle choices, genetics, or a combination of the two."
+      "a": "Hypertension, or high blood pressure, is a chronic condition that can be treated through a variety of methods. Here are some steps that can be taken to manage and control hypertension:\n\n1. Blood pressure monitoring: blood pressure is measured at regular intervals to ensure that it is being maintained within the normal range.\n\n2. eat a healthy diet: Eating a diet that is high in fruits, vegetables, whole grains, lean proteins, and healthy fats can help to reduce the risk of developing hypertension.\n\n3. Exercise regularly: Regular"
     }
   ],
   "mcq": [
@@ -37,17 +37,17 @@
       "answer": 0,
       "kind": "recall",
       "scores": [
-        -4.319975852966309,
-        -7.129439353942871,
-        -3.310086250305176,
-        -3.9440457820892334
+        -7.195544719696045,
+        -5.96396017074585,
+        -7.007844924926758,
+        -4.290122985839844
       ],
-      "pred": 2,
+      "pred": 3,
       "confidence": [
-        0.19004612460516518,
-        0.011447865607541066,
-        0.5217332314761716,
-        0.2767727783111221
+        0.041830372339291606,
+        0.14333825198638378,
+        0.05046714252408803,
+        0.7643642331502366
       ],
       "correct": 0
     },
@@ -62,19 +62,19 @@
       "answer": 0,
       "kind": "recall",
       "scores": [
-        -5.739214897155762,
-        -5.414035320281982,
-        -5.86014461517334,
-        -9.779827117919922
+        -2.198669910430908,
+        -5.815848350524902,
+        -7.470515251159668,
+        -10.306825637817383
       ],
-      "pred": 1,
+      "pred": 0,
       "confidence": [
-        0.30413975468394716,
-        0.42101433879442957,
-        0.26949709123647003,
-        0.00534881528515327
+        0.9687166956922179,
+        0.02601813412737523,
+        0.004973515134867028,
+        0.00029165504553974015
       ],
-      "correct": 0
+      "correct": 1
     },
     {
       "question": "What is the first-line oral medication for type 2 diabetes?",
@@ -87,17 +87,17 @@
       "answer": 0,
       "kind": "recall",
       "scores": [
-        -1.9080638885498047,
-        -2.059255599975586,
-        -3.2573180198669434,
-        -3.5156335830688477
+        -2.2804296016693115,
+        -2.944502353668213,
+        -4.2731428146362305,
+        -5.976214408874512
       ],
       "pred": 0,
       "confidence": [
-        0.43112915340199026,
-        0.3706343487267074,
-        0.11184942798119331,
-        0.08638706989010904
+        0.5966930270673193,
+        0.3071480984477323,
+        0.08134420336833453,
+        0.014814671116613798
       ],
       "correct": 1
     },
@@ -112,19 +112,19 @@
       "answer": 0,
       "kind": "recall",
       "scores": [
-        -2.155916929244995,
-        -3.1715288162231445,
-        -2.5074708461761475,
-        -2.533019781112671
+        -4.233376979827881,
+        -3.6368584632873535,
+        -3.7701337337493896,
+        -3.9934191703796387
       ],
-      "pred": 0,
+      "pred": 1,
       "confidence": [
-        0.3634222495957275,
-        0.13162454231971688,
-        0.25570168277869315,
-        0.24925152530586248
+        0.17617415333075798,
+        0.31989458827970046,
+        0.27997946450829836,
+        0.2239517938812433
       ],
-      "correct": 1
+      "correct": 0
     },
     {
       "question": "A patient on warfarin is prescribed an antibiotic. Which most increases bleeding risk?",
@@ -137,17 +137,17 @@
       "answer": 0,
       "kind": "reasoning",
       "scores": [
-        -2.4129996299743652,
-        -3.557983636856079,
-        -4.715435981750488,
-        -1.6920690536499023
+        -4.6590800285339355,
+        -5.290304183959961,
+        -8.011369705200195,
+        -2.886037588119507
       ],
       "pred": 3,
       "confidence": [
-        0.287803758282531,
-        0.09158750427355011,
-        0.02878465697478965,
-        0.5918240804691292
+        0.13412580904064264,
+        0.07134691300726406,
+        0.004694955132897905,
+        0.7898323228191955
       ],
       "correct": 0
     },
@@ -162,19 +162,84 @@
       "answer": 0,
       "kind": "reasoning",
       "scores": [
-        -2.560093879699707,
-        -2.824403762817383,
-        -5.030725002288818,
-        -5.339771270751953
+        -5.663851737976074,
+        -4.095909118652344,
+        -6.394183158874512,
+        -7.350539207458496
       ],
-      "pred": 0,
+      "pred": 1,
       "confidence": [
-        0.5223771723505529,
-        0.40104754896331113,
-        0.04415732198939722,
-        0.03241795669673874
+        0.15471133963527436,
+        0.7421145972877279,
+        0.07453207985652185,
+        0.02864198322047599
       ],
-      "correct": 1
+      "correct": 0
+    }
+  ],
+  "rag": [
+    {
+      "q": "What is the role of AMPK in the antidiabetic action of metformin?",
+      "a": "The AMPK pathway is a potential target for cancer prevention. Metformin may inhibit the growth of some types of cancer by activating AMPK. There is some evidence that metformin may also protect from cancer (in the pancreas, breast and colon). metformin and cancer Answer: yes.",
+      "sources": [
+        {
+          "text": "ase (AMPK), which is recognized to inhibit cellular protein synthesis and growth. Whatever the precise mechanism, any reduction in the risk for cancer may be far-reaching, and this favorable effect adds to the clinical value of metformin as the mainstay of antidiabetic treatment.",
+          "source": "pubmed",
+          "score": 0.606
+        },
+        {
+          "text": "Expanding role of AMPK in endocrinology. Adenosine 5' monophosphate-activated protein kinase (AMPK) is a regulator of cellular and systemic energy homeostasis. It mediates some of the effects of peripheral hormones such as leptin, ghrelin and adiponectin, and it is involved in the insulin-sensitizin",
+          "source": "pubmed",
+          "score": 0.594
+        },
+        {
+          "text": "Metformin and cancer: licence to heal? Type 2 diabetes mellitus is associated with increased risk of malignancy (mainly cancer of the pancreas, breast, colon, endometrium and bladder). In addition, there is evidence that antidiabetic medication may itself affect the risk of cancer. Importantly, metf",
+          "source": "pubmed",
+          "score": 0.592
+        }
+      ]
+    },
+    {
+      "q": "What are the cardiovascular effects of statins beyond lowering cholesterol?",
+      "a": "Statin use is associated with beneficial nonlipid effects beyond cholesterol lowering. Answer: yes.",
+      "sources": [
+        {
+          "text": "ve cholesterol reduction, with no apparent threshold for LDL cholesterol. New therapies will aid in achieving lower cholesterol levels and the use of combination therapies targeting different aspects of cholesterol metabolism may produce additional benefits. Outcome studies are awaited to further ad",
+          "source": "pubmed",
+          "score": 0.731
+        },
+        {
+          "text": "What the statin trials have taught us. It has taken a century since Anitschkow began feeding cholesterol to rabbits to study the role of cholesterol in atherosclerosis to be fully appreciated and for the potential of cholesterol reduction to prevent cardiovascular events to be fully realized. The bo",
+          "source": "pubmed",
+          "score": 0.727
+        },
+        {
+          "text": "The nonlipid effects of statins on endothelial function. Hydroxymethylglutaryl-coenzyme A reductase inhibitors or statins constitute one of the wonder drugs of the last 2 decades. Use of this hypolipidemic medication class reduces morbidity and mortality in patients with a wide variety of cholestero",
+          "source": "pubmed",
+          "score": 0.689
+        }
+      ]
+    },
+    {
+      "q": "How does aspirin reduce the risk of colorectal cancer?",
+      "a": "Aspirin reduces the risk of colorectal cancer. However, the risk is still lower than that of many other common cancers. Thus, while the potential for aspirin to prevent colon cancer is clear, the absolute risk reduction is small relative to the risk of developing other common cancers. Answer: yes.",
+      "sources": [
+        {
+          "text": "[Does 5-ASA prevent development of colon cancer in ulcerative colitis?]. Several case control studies have demonstrated that in patients with ulcerative colitis, ingestion of 5-ASA is correlated with a reduced risk of developing colon cancer. A recent editorial in The American Journal of Gastroenter",
+          "source": "pubmed",
+          "score": 0.637
+        },
+        {
+          "text": "Aspirin and cancer risk: an update to 2001. Evidence of a protective role of aspirin on the risk of colorectal and other common cancers has been building up since the end of the 1980s. There are now more than 15 epidemiological (case-control and cohort) studies indicating that long-term use of aspir",
+          "source": "pubmed",
+          "score": 0.63
+        },
+        {
+          "text": "Can the risk of colon cancer be lessened? Colon cancer was rare or uncommon in the past, and still is in traditionally-living third world populations. It now affects 3-5% of western populations. Epidemiological, case control, experimental and other studies suggest that proneness to colon cancer can ",
+          "source": "pubmed",
+          "score": 0.564
+        }
+      ]
     }
   ]
 }

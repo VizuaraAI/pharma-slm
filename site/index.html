@@ -198,6 +198,8 @@
       <a href="#experiments">Experiments</a>
       <a href="#chat">Chat</a>
       <a href="#mcq">MCQ exam</a>
+      <a href="#scaling">1.3B</a>
+      <a href="#rag">RAG</a>
       <a href="#playbook">Playbook</a>
     </div>
     <div style="display:flex;gap:10px;align-items:center">
@@ -305,7 +307,7 @@
       Click a question to see a pre-run answer instantly, or type your own pharma question.</p>
     <div class="demo" id="chatDemo">
       <div class="demo-head">
-        <div class="t">💬 prod_winner_v2 · chat</div>
+        <div class="t">💬 prod_1b · 1.3B · chat</div>
         <span class="status" id="chatStatus"><span class="led"></span><span id="chatStatusT">connecting…</span></span>
       </div>
       <div class="chips" id="chatChips"></div>
@@ -407,10 +409,50 @@
   </div>
 </section>
 
-<!-- 08 PLAYBOOK -->
-<section class="block" id="playbook">
+<!-- 08 SCALING -->
+<section class="block" id="scaling">
   <div class="wrap reveal">
     <div class="knum">08</div>
+    <h2>We tested the capacity lever: 350M → 1.3B.</h2>
+    <p class="lead">Section 06 said the only way to move *reasoning* is to make the model bigger. So we did —
+      built and trained a <b>1.3B-parameter</b> model from scratch (same recipe, 4× the size), and the
+      prediction held: <b>the metric that was stuck at 350M finally moved.</b></p>
+    <table class="tbl">
+      <thead><tr><th>Metric</th><th>350M</th><th>1.3B</th><th>Read</th></tr></thead>
+      <tbody>
+        <tr class="win"><td>MedMCQA (chance 0.25)</td><td>0.290</td><td><b>0.321</b></td><td class="good">cleared chance — scale moved it</td></tr>
+        <tr class="win"><td>PubMedQA</td><td>0.608</td><td><b>0.654</b></td><td class="good">+4.6 pts</td></tr>
+        <tr class="win"><td>PubMed val-loss ↓</td><td>2.27</td><td><b>2.12</b></td><td class="good">better</td></tr>
+        <tr class="win"><td>PMC val-loss ↓</td><td>2.13</td><td><b>1.97</b></td><td class="good">better</td></tr>
+      </tbody>
+    </table>
+    <h3 class="sub-h">The generation jump is even bigger than the numbers</h3>
+    <div class="split">
+      <div class="panelx meh"><div class="ic">🤏</div><h3>350M — "metformin"</h3><p>"Metformin is a <b>glycoside antibiotic</b> similar to erythromycin…" — fluent but flatly wrong.</p></div>
+      <div class="panelx good"><div class="ic">✅</div><h3>1.3B — "metformin"</h3><p>"1. <b>Insulin sensitization</b> 2. <b>Decreased hepatic glucose production</b> 3. Decreased glucose absorption…" — correct, structured mechanism.</p></div>
+    </div>
+    <p class="lead" style="font-size:16px;margin-top:22px"><b>Honest note:</b> on aggregate (1,000 questions) MedMCQA improved 0.29→0.32; on any single trick question it's still a coin-flip. The capacity wall <i>lifts</i> at 1.3B, it doesn't vanish — for board-exam accuracy you keep going (2.7B+). Cost of the 1.3B run: ~$880; one CUDA-OOM caught & fixed (small micro-batch + grad-accum), and the learning rate had to drop from 1e-3 → <span class="chipm">5e-4</span> (found by a quick ablation at the new size).</p>
+  </div>
+</section>
+
+<!-- 09 RAG -->
+<section class="block" id="rag">
+  <div class="wrap reveal">
+    <div class="knum">09</div>
+    <h2>RAG: answers it can actually cite.</h2>
+    <p class="lead">A small model's biggest weakness is confidently-wrong facts. The fix isn't a bigger model —
+      it's <b>retrieval</b>: pull real PubMed passages at question time and have the 1.3B answer <b>grounded in
+      them, with citations.</b> We indexed <b>300,000 PubMed passages</b> (PubMedBERT embeddings + FAISS).
+      Now every answer shows its sources, so you can verify it.</p>
+    <div id="ragGrid" class="mcq-grid" style="grid-template-columns:1fr"></div>
+    <p class="lead" style="font-size:16px;margin-top:8px"><b>The tradeoff (honestly):</b> retrieval quality matters — a vague query can pull tangential papers — but grounding + citations is the highest-ROI reliability layer for a domain assistant, far cheaper than scaling. The live chat above is now the <b>1.3B</b>; RAG adds the sources.</p>
+  </div>
+</section>
+
+<!-- 10 PLAYBOOK -->
+<section class="block" id="playbook">
+  <div class="wrap reveal">
+    <div class="knum">10</div>
     <h2>How an enterprise builds an LLM — the playbook.</h2>
     <p class="lead">The exact roadmap we followed, generalized. Purple steps are <b>decisions</b>; each step
       lists the <b>ablations to run</b> and a <b>rough cost</b> (at the 350M scale). The single most important
@@ -522,10 +564,10 @@
   </div>
 </section>
 
-<!-- 09 OPEN SOURCE -->
+<!-- 11 OPEN SOURCE -->
 <section class="block" id="opensource">
   <div class="wrap reveal">
-    <div class="knum">09</div>
+    <div class="knum">11</div>
     <h2>Everything is open & reproducible.</h2>
     <p class="lead">The full repository documents <b>every experiment, every GPU, the cost breakdown, and
       step-by-step commands</b> — so anyone can rebuild this from scratch. Nothing is hidden.</p>
@@ -568,8 +610,24 @@ const API = "https://teamvizuara--pharma-slm-serve-web.modal.run";
 let DEMO = {chat:[], mcq:[]};
 
 /* ---------- load baked data ---------- */
-fetch("demo_data.json").then(r=>r.json()).then(d=>{DEMO=d; renderChips(); renderMcq();})
+fetch("demo_data.json").then(r=>r.json()).then(d=>{DEMO=d; renderChips(); renderMcq(); renderRag();})
   .catch(()=>{ /* fallback minimal */ renderChips(); renderMcq(); });
+
+function renderRag(){
+  const g=document.getElementById('ragGrid'); if(!g||!DEMO.rag) return; g.innerHTML='';
+  DEMO.rag.forEach(item=>{
+    const card=document.createElement('div'); card.className='qcard'; card.style.cursor='default';
+    let srcHtml='';
+    (item.sources||[]).slice(0,3).forEach((s,i)=>{
+      srcHtml+=`<div style="display:flex;gap:8px;margin-top:8px;font-size:13.5px"><span class="chipm" style="flex:0 0 auto">[${i+1}] PubMed · ${(s.score!=null?s.score.toFixed(2):'')}</span><span style="color:var(--gray)">${(s.text||'').slice(0,160)}…</span></div>`;
+    });
+    card.innerHTML=`<div class="kind reason">grounded · retrieval-augmented</div>
+      <div class="q">${item.q}</div>
+      <div style="font-size:15.5px;line-height:1.55">${item.a||''}</div>
+      <div style="margin-top:14px;font-weight:700;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--gray-2)">Cited sources</div>${srcHtml}`;
+    g.appendChild(card);
+  });
+}
 
 /* ---------- endpoint warm check ---------- */
 function setStatus(on,txt){const s=document.getElementById('chatStatus');s.classList.toggle('on',on);document.getElementById('chatStatusT').textContent=txt;}

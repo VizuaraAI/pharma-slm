@@ -36,6 +36,8 @@ image = (
         "tqdm==4.67.1",
         "zstandard",
         "modal==1.4.1",   # so the torchrun subprocess can write live metrics to modal.Dict
+        "sentence-transformers==3.3.1",  # RAG embeddings
+        "faiss-cpu==1.9.0",              # RAG vector index
     )
     .env({"PYTHONPATH": "/root/src", "HF_HOME": "/tmp/hf", "TOKENIZERS_PARALLELISM": "false"})
     .add_local_dir(SRC, remote_path="/root/src")
@@ -45,6 +47,22 @@ app = modal.App(APP_NAME, image=image)
 vol = modal.Volume.from_name(VOL_NAME, create_if_missing=True)
 metrics = modal.Dict.from_name(METRICS_DICT, create_if_missing=True)
 VOLUMES = {"/vol": vol}
+
+
+@app.function(gpu="H100:1", volumes={"/vol": vol}, timeout=4 * 3600)
+def build_rag_index(max_passages=300000):
+    import sys as _sys
+    _sys.path.insert(0, "/root/src")
+    from rag_index import build
+    vol.reload()
+    r = build("/vol/rag", max_passages=max_passages)
+    vol.commit()
+    return r
+
+
+@app.local_entrypoint()
+def build_rag(max_passages: int = 300000):
+    print(build_rag_index.remote(max_passages))
 
 
 # ----------------------------- data prep -------------------------------------
@@ -111,6 +129,7 @@ def _launch_training(config: dict):
     env = dict(os.environ)
     env["MODAL_METRICS_DICT"] = METRICS_DICT
     env["PYTHONPATH"] = "/root/src"
+    env["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"  # reduce fragmentation OOM on big models
 
     cmd = ["python", "-m", "torch.distributed.run", "--standalone",
            f"--nproc-per-node={n_gpu}", "/root/src/train.py", "--config_file", cfg_path]
@@ -558,9 +577,10 @@ def finalize_one_remote(name, eval_limit=1000):
     base = f"/vol/runs/{name}/best.pt"
     sft_out = f"/vol/runs/{name}/best_sft.pt"
     env = dict(os.environ); env["PYTHONPATH"] = "/root/src"
+    env["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"  # safe for 1.3B SFT
     subprocess.run(["python", "/root/src/sft.py", "--base_ckpt", base, "--data",
                     "/vol/sft/train.jsonl", "--tokenizer", "/vol/tokenizer/tokenizer.json",
-                    "--out", sft_out, "--epochs", "3"], env=env, check=True)
+                    "--out", sft_out, "--epochs", "3", "--batch_size", "6"], env=env, check=True)
     vol.commit()
 
     from evaluate import load_model, load_task, eval_mcq

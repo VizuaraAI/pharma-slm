@@ -20,8 +20,8 @@
       "med_textbooks": 0.005
     },
     "seq_len": 2048,
-    "batch_size": 10,
-    "grad_accum": 12,
+    "batch_size": 4,
+    "grad_accum": 30,
     "lr": 0.0005,
     "min_lr": 5e-05,
     "warmup_steps": 1000,
