@@ -6,6 +6,10 @@
 A single person tuning one model at a time is slow and biased. We instead ran experiments the way a research
 lab does: \textbf{many models in parallel, each cheap, the losers killed early, the winner promoted.}
 
+\fig{figures/diag_experiments.png}{0.98}{The selection funnel. Seven ablations choose the learning rate and
+mix; four full models then race on the data mix; the winner is promoted and finally scaled to 1.3B. Abandoned
+experiments (grey) die early so they never waste a GPU-day.}
+
 \section{Round one: the ablation sweep}
 \fig{plots/plot_ablation.pdf}{0.82}{Seven short models trained at once (one GPU each, $\sim$0.35\,B tokens),
 ranked by PubMed validation loss at a matched step. Learning rate \texttt{1e-3} edged out the field;

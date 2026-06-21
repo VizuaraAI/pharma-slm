@@ -49,6 +49,10 @@ containers, each handling a slice of the source's parquet files, writing flat \t
 shared volume. The data loader then samples sources by weight \emph{at batch time}, which means the mix ratio
 is a runtime knob --- changing it costs nothing and requires no re-tokenization.
 
+\fig{figures/diag_datapipeline.png}{0.98}{The data pipeline. Open sources are tokenized in parallel across
+$\sim$24 cloud workers into per-source binary token files; a weighted mixing loader then samples them at batch
+time, so the general/domain ratio is a runtime knob rather than a re-tokenization job.}
+
 \begin{lesson}
 Domain data, not general data, is your ceiling. Plan for it: measure how many \emph{unique} domain tokens you
 have, and remember that training tokens $\div$ unique tokens $=$ epochs. Above $\sim$4 epochs on a thin
@@ -72,6 +76,11 @@ context window and less compute is spent per document. On a dense test sentence 
 \emph{``Pharmacokinetics of acetaminophen: hepatic glucuronidation and cytochrome P450-mediated
 metabolism''} --- ours produced \textbf{1.57 tokens per word}. A general tokenizer would fragment
 \texttt{pharmacokinetics}, \texttt{glucuronidation}, and \texttt{cytochrome} into many pieces each.
+
+\fig{figures/diag_tokenizer.png}{0.98}{Our byte-level BPE in action. Text is pre-tokenized into bytes, then
+32{,}000 learned merges reassemble it into tokens. Because the vocabulary was trained on pharmaceutical text,
+domain words stay whole (1--2 tokens) where a general tokenizer would shatter them (5--6 tokens) --- a
+fertility of 1.57 on dense pharma text.}
 
 \begin{numbers}[The tokenizer in one line]
 32k vocabulary $\cdot$ byte-level BPE $\cdot$ trained on the blended corpus $\cdot$ fertility 1.57 on pharma
@@ -97,6 +106,10 @@ your chat special tokens before pretraining.
 We wrote the model by hand --- a modern decoder-only Transformer, deliberately readable. ``Modern'' here means
 the handful of upgrades over the original GPT-2 block that the field has settled on.
 
+\fig{figures/diag_architecture.png}{0.46}{The exact architecture we built. Token IDs are embedded
+(vocab 32{,}000 $\times$ dim 2{,}048 for the 1.3B; dim 1{,}024 for the 350M), passed through 24 decoder layers,
+a final RMSNorm, and a weight-tied linear head to produce logits over the 32{,}000-token vocabulary.}
+
 \section{The components}
 \begin{center}\small
 \begin{tabular}{@{}ll@{}}
@@ -112,6 +125,20 @@ Precision & bf16 with \texttt{torch.compile}\\
 \bottomrule
 \end{tabular}
 \end{center}
+
+\fig{figures/diag_block.png}{0.96}{One decoder layer, the pre-norm design: each sublayer normalizes its
+input, transforms it, and adds the result back to a residual skip-connection ---
+$x \leftarrow x + \text{Attn}(\text{RMSNorm}(x))$, then $x \leftarrow x + \text{SwiGLU}(\text{RMSNorm}(x))$.
+The skip-connections are what let gradients flow cleanly through all 24 layers.}
+
+\fig{figures/diag_attention.png}{0.96}{Inside the attention sublayer. The input is projected to queries, keys,
+and values; rotary position embeddings (RoPE) are applied to $Q$ and $K$; scaled dot-product attention runs
+with a causal mask (each token sees only the past) across 16 heads of dimension 128; the heads are
+concatenated and projected out.}
+
+\fig{figures/diag_swiglu.png}{0.96}{Inside the feed-forward sublayer. SwiGLU is a \emph{gated} MLP: one linear
+branch passes through a SiLU activation and gates a second linear branch element-wise, before a final
+down-projection --- $\text{SwiGLU}(x) = W_2\,(\text{SiLU}(W_1 x) \odot W_3 x)$, hidden width 5{,}632.}
 
 \section{Sizing the model}
 Parameters come almost entirely from the layers. For our 350M model: dimension 1024, 24 layers, 16 heads. Each

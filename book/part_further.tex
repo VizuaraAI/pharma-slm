@@ -69,6 +69,10 @@ We indexed \textbf{300{,}000 PubMed passages} with a biomedical embedding model 
 vector index. At query time we embed the question, retrieve the most similar passages, and prompt the 1.3B
 model to answer using them --- returning the sources so a human can verify.
 
+\fig{figures/diag_rag.png}{0.98}{The retrieval-augmented generation flow. The question is embedded and matched
+against a 300{,}000-passage PubMed index; the top matches are pasted into the prompt; the 1.3B model answers
+grounded in them and returns the citations.}
+
 \fig{figures/fig_grounding.png}{0.55}{Every answer is now tethered to evidence. The model's response is
 anchored to the retrieved passages, and those passages are shown with similarity scores.}
 

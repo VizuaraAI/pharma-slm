@@ -13,8 +13,25 @@
 \usepackage{enumitem}
 \usepackage{fancyhdr}
 \usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,calc,fit,backgrounds,shapes.geometric,shapes.misc,decorations.pathreplacing}
 \usepackage[hidelinks]{hyperref}
 \usepackage{emptypage}
+
+% ---- technical-schematic node styles ----
+\tikzset{
+  blk/.style={rounded corners=3pt, draw=line, fill=white, line width=0.9pt, inner sep=5pt,
+    font=\sffamily\small, align=center, minimum height=8mm, minimum width=30mm},
+  teal/.style={blk, draw=teal, fill=teal!8},
+  tealb/.style={blk, draw=teal, fill=teal!16, line width=1.1pt},
+  purp/.style={blk, draw=purple, fill=purple!7},
+  inkb/.style={blk, draw=ink!70, fill=soft},
+  op/.style={circle, draw=slate, fill=white, line width=0.9pt, inner sep=1.5pt, font=\small},
+  flow/.style={draw=teal, line width=1pt, -{Stealth[length=2.2mm]}},
+  fline/.style={draw=slate!70, line width=0.9pt, -{Stealth[length=2mm]}},
+  dim/.style={font=\sffamily\scriptsize\color{slate}},
+  lbl/.style={font=\sffamily\footnotesize\color{ink}},
+}
 
 % ---- palette ----
 \definecolor{teal}{HTML}{0BB47A}
